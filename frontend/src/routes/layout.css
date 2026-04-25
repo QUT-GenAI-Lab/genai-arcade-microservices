@@ -1,0 +1,71 @@
+@import 'tailwindcss';
+
+:root {
+	--arcade-primary: #00007f;
+	--arcade-on-primary: #f8fbff;
+	--arcade-background: #ad5d8d;
+	--arcade-surface-chrome: #bfb8bf;
+	--arcade-surface-variant: #cccccc;
+	--arcade-surface: #fff8ff;
+	--arcade-text: #111827;
+	--arcade-muted-text: #5f6470;
+	--arcade-outline-dark: #000000;
+	--arcade-outline-light: #fff8ff;
+	--arcade-window-shadow: #7f787f;
+}
+
+html {
+	scroll-behavior: smooth;
+}
+
+a {
+	color: inherit;
+}
+
+p,
+ul,
+ol {
+	line-height: 1.55;
+}
+
+::-webkit-scrollbar {
+	height: 16px;
+	width: 16px;
+}
+
+::-webkit-scrollbar-track {
+	background-image: url('$lib/assets/images/track.png');
+	background-repeat: repeat;
+}
+
+::-webkit-scrollbar-thumb {
+	background-color: var(--arcade-surface-variant);
+	border: 2px solid;
+	border-color: var(--arcade-outline-light) var(--arcade-outline-dark) var(--arcade-outline-dark)
+		var(--arcade-outline-light);
+}
+
+::-webkit-scrollbar-button {
+	background-color: var(--arcade-surface-variant);
+	background-position: center center;
+	background-repeat: no-repeat;
+	border: 2px solid;
+	border-color: var(--arcade-outline-light) var(--arcade-outline-dark) var(--arcade-outline-dark)
+		var(--arcade-outline-light);
+}
+
+::-webkit-scrollbar-button:vertical:decrement {
+	background-image: url('$lib/assets/images/up.png');
+}
+
+::-webkit-scrollbar-button:vertical:increment {
+	background-image: url('$lib/assets/images/down.png');
+}
+
+::-webkit-scrollbar-button:horizontal:decrement {
+	background-image: url('$lib/assets/images/left.png');
+}
+
+::-webkit-scrollbar-button:horizontal:increment {
+	background-image: url('$lib/assets/images/right.png');
+}
