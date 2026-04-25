@@ -1,0 +1,99 @@
+name: Deploy to Hugging Face Spaces
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      app_name:
+        description: 'Enter the path of the app (e.g., "widgets-api/app") to deploy only that app, or "all" to deploy all apps.'
+        required: true
+        default: 'all'
+        type: string
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-matrix
+        run: |
+          # If manual dispatch is used and a specific app is named, use that.
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ github.event.inputs.app_name }}" != "all" ]]; then
+            APPS=$(echo '["${{ github.event.inputs.app_name }}"]' | jq -c .)
+          # Otherwise, find all space.yaml files to determine which apps to deploy
+          else
+            APPS=$(find . -name "space.yaml" | xargs -n 1 dirname | jq -R -s -c 'split("\n")[:-1]')
+          fi
+          echo "matrix=$APPS" >> $GITHUB_OUTPUT
+
+  deploy:
+    needs: discover
+    if: ${{ needs.discover.outputs.matrix != '[]' }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        app: ${{ fromJSON(needs.discover.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      - name: Inject Metadata and Deploy
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          APP_DIR=${{ matrix.app }}
+          MANIFEST_PATH="$APP_DIR/space.yaml"
+          README_PATH="$APP_DIR/README.md"
+
+          # 1. Skip logic for automated pushes
+          if [[ "${{ github.event_name }}" == "push" ]]; then
+            if git diff --quiet HEAD^ HEAD -- "$APP_DIR"; then
+              echo "No changes in $APP_DIR, skipping."
+              exit 0
+            fi
+          fi
+
+          # 2. Extract Space ID for routing
+          SPACE_ID=$(yq e '.space_id' "$MANIFEST_PATH")
+          
+          # 3. Inject space.yaml configurations into README.md frontmatter
+          # We remove 'space_id' from the injection so it doesn't clutter the HF config
+          # The 'frontmatter' format in yq allows processing the header of the md file
+          if [ -f "$README_PATH" ]; then
+            echo "Injecting configurations into $README_PATH..."
+            
+            # This command merges space.yaml (minus space_id) into the README frontmatter
+            yq eval-all --inplace 'select(fileIndex==0).space_id as $id | select(fileIndex==1) | . *= (select(fileIndex==0) | del(.space_id))' "$MANIFEST_PATH" "$README_PATH"
+          else
+            echo "Warning: No README.md found in $APP_DIR. Creating one with frontmatter..."
+            echo "---" > "$README_PATH"
+            yq e 'del(.space_id)' "$MANIFEST_PATH" >> "$README_PATH"
+            echo "---" >> "$README_PATH"
+          fi
+
+          # 4. Commit changes locally so subtree push sees them
+          # This commit only exists in the runner's ephemeral environment
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add "$README_PATH"
+          git commit -m "chore: inject HF metadata for $APP_DIR"
+
+          # 5. Push to Hugging Face
+          # 'Split' creates a temporary local branch containing only the subdirectory
+          # We'll call this temporary branch 'deploy-branch'
+          git subtree split --prefix=$APP_DIR -b deploy-branch
+
+          # Add the remote if it doesn't exist (using 'target' as before)
+          git remote add target "https://user:$HF_TOKEN@huggingface.co/spaces/$SPACE_ID" || true
+
+          # Use standard git push with --force on the split branch
+          # We are pushing our local 'deploy-branch' to the remote 'main'
+          git push target deploy-branch:main --force
+
+          # Clean up the local temporary branch
+          git branch -D deploy-branch

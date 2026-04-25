@@ -1,2 +1,3 @@
-# genai-arcade-microservices
-Microservices, serverless implementation of the GenAI Arcade
+# GenAI Arcade Microservices
+
+Container-based microservices for GenAI Arcade's games.
