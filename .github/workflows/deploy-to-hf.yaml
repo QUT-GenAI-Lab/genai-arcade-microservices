@@ -25,7 +25,7 @@ jobs:
             APPS=$(echo '["${{ github.event.inputs.app_name }}"]' | jq -c .)
           # Otherwise, find all space.yaml files to determine which apps to deploy
           else
-            APPS=$(find . -name "space.yaml" | xargs -n 1 dirname | jq -R -s -c 'split("\n")[:-1]')
+            APPS=$(find * -name "space.yaml" | xargs -n 1 dirname | jq -R -s -c 'split("\n")[:-1]')
           fi
           echo "matrix=$APPS" >> $GITHUB_OUTPUT
 
