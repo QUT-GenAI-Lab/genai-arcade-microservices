@@ -334,7 +334,8 @@
 		display: grid;
 		font-family: Tahoma, Geneva, Verdana, sans-serif;
 		gap: 12px;
-		padding: 6px 8px 8px;
+		padding: 12px;
+		background: var(--arcade-surface-variant);
 	}
 
 	.widget-panel {
@@ -439,7 +440,7 @@
 	}
 
 	.notice {
-		background: var(--arcade-surface-variant);
+		background: var(--arcade-surface);
 		border: 1px solid;
 		border-color: var(--arcade-outline-light) var(--arcade-outline-dark) var(--arcade-outline-dark)
 			var(--arcade-outline-light);

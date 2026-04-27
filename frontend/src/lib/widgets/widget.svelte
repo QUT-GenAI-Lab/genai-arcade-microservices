@@ -25,6 +25,5 @@
 		border: 2px solid;
 		border-color: var(--arcade-window-shadow) var(--arcade-outline-light)
 			var(--arcade-outline-light) var(--arcade-window-shadow);
-		padding: 0.5rem;
 	}
 </style>
