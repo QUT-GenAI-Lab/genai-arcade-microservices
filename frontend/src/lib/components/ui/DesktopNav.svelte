@@ -20,7 +20,7 @@
 			onclick={() => jumpToFragment(item.href)}
 		>
 			<div
-				class="flex h-11 w-full flex-col items-center justify-center gap-0.5 border-2 border-t-outline-light border-r-outline-dark border-b-outline-dark border-l-outline-light bg-surface-variant px-2.5 text-center text-text group-hover:border-t-outline-dark group-hover:border-r-outline-light group-hover:border-b-outline-light group-hover:border-l-outline-dark group-focus-visible:border-t-outline-dark group-focus-visible:border-r-outline-light group-focus-visible:border-b-outline-light group-focus-visible:border-l-outline-dark"
+				class="flex h-11 w-full flex-col items-center justify-center gap-0.5 bevel-raised bg-surface-variant px-2.5 text-center text-text group-hover:bevel-sunken group-focus-visible:bevel-sunken"
 			>
 				<span class="text-lg leading-none" aria-hidden="true">{item.icon}</span>
 				<span class="w-full overflow-hidden text-[10px] font-bold text-ellipsis whitespace-nowrap">

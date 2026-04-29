@@ -88,7 +88,7 @@
 
 	<div
 		class={[
-			'relative border-2 border-t-window-shadow border-r-outline-light border-b-outline-light border-l-window-shadow bg-surface focus-within:border-t-outline-dark focus-within:border-r-outline-light focus-within:border-b-outline-light focus-within:border-l-outline-dark',
+			'relative bevel-sunken bg-white focus-within:bevel-sunken focus-within:bg-white',
 			disabled && 'opacity-[0.72]'
 		]}
 	>

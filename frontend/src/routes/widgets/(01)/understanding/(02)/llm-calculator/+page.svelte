@@ -201,9 +201,9 @@
 	const sectionMetaClass = 'text-xs text-muted-text';
 	const displayLabelClass = 'mb-1 text-xs font-bold';
 	const displayBaseClass =
-		'overflow-hidden border border-t-muted-text border-r-outline-light border-b-outline-light border-l-muted-text bg-surface px-2 py-1.5 text-right font-[Courier_New,Courier,monospace] text-ellipsis whitespace-nowrap';
+		'overflow-hidden bevel-sunken-thin bg-white px-2 py-1.5 text-right font-[Courier_New,Courier,monospace] text-ellipsis whitespace-nowrap';
 	const keypadButtonClass =
-		'min-h-9 cursor-pointer border-2 border-t-outline-light border-r-outline-dark border-b-outline-dark border-l-outline-light bg-surface-variant font-[Tahoma,Geneva,Verdana,sans-serif] text-[13px] font-bold text-text hover:border-t-outline-dark hover:border-r-outline-light hover:border-b-outline-light hover:border-l-outline-dark focus-visible:border-t-outline-dark focus-visible:border-r-outline-light focus-visible:border-b-outline-light focus-visible:border-l-outline-dark focus-visible:outline-none disabled:cursor-default disabled:text-muted-text disabled:hover:border-t-outline-light disabled:hover:border-r-outline-dark disabled:hover:border-b-outline-dark disabled:hover:border-l-outline-light disabled:focus-visible:border-t-outline-light disabled:focus-visible:border-r-outline-dark disabled:focus-visible:border-b-outline-dark disabled:focus-visible:border-l-outline-light';
+		'min-h-9 cursor-pointer bevel-raised bg-surface-variant font-[Tahoma,Geneva,Verdana,sans-serif] text-[13px] font-bold text-text hover:bevel-sunken focus-visible:bevel-sunken focus-visible:outline-none disabled:cursor-default disabled:text-muted-text disabled:hover:bevel-raised disabled:focus-visible:bevel-raised';
 	const noticeClass =
 		'bevel-raised-thin bg-surface-variant px-2.5 py-2 text-xs leading-6';
 	const exampleButtonClass = 'min-h-7.5 px-2.5 py-1.25 text-[11px]';

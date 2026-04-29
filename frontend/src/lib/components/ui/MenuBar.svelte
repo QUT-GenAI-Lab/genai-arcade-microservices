@@ -9,7 +9,7 @@
 	let { items }: Props = $props();
 </script>
 
-<nav class="border-b border-b-window-shadow px-1.5 py-1" aria-label="Window menu">
+<nav class="border-b-window-shadow px-1.5 py-1" aria-label="Window menu">
 	<ul class="m-0 flex list-none flex-wrap gap-3 p-0">
 		{#each items as item (item.label)}
 			<li>

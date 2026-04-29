@@ -11,7 +11,7 @@
 </script>
 
 <div
-	class="mt-6 grid [grid-template-columns:1fr_2fr_1fr] items-center gap-3 border-t border-t-window-shadow pt-4 text-sm max-[700px]:grid-cols-1 max-[700px]:justify-items-start"
+	class="mt-6 grid [grid-template-columns:1fr_2fr_1fr] items-center gap-3 border-t-window-shadow pt-4 text-sm max-[700px]:grid-cols-1 max-[700px]:justify-items-start"
 >
 	<button
 		class="border-0 bg-transparent p-0 text-text hover:underline focus-visible:underline"
