@@ -29,21 +29,23 @@
 	<WindowFrame {title} {icon} {controls}>
 		<MenuBar items={menuItems} />
 
-		<article class="page-window__content">
-			{#each sections as section (section.title)}
-				<section class="page-window__section" id={section.id}>
-					<h3>{section.title}</h3>
+		<article class="bg-white px-6 py-4.5 bevel-sunken">
+			{#each sections as section, index (section.title)}
+				<section class={[index > 0 && 'mt-7', 'space-y-3.5']} id={section.id}>
+					<h3 class="m-0 text-xl">{section.title}</h3>
 
 					{#if section.quote}
-						<blockquote>{section.quote}</blockquote>
+						<blockquote class="ml-0 border-l-8 border-l-outline-dark pl-3.75 text-sm leading-[1.6]">
+							{section.quote}
+						</blockquote>
 					{/if}
 
 					{#each section.paragraphs as paragraph, index (`${section.title}-${index}`)}
-						<p>{paragraph}</p>
+						<p class="text-sm leading-[1.6]">{paragraph}</p>
 					{/each}
 
 					{#if section.bullets?.length}
-						<ul>
+						<ul class="list-disc space-y-2 pl-5 text-sm leading-[1.6]">
 							{#each section.bullets as bullet, index (`${section.title}-bullet-${index}`)}
 								<li>{bullet}</li>
 							{/each}
@@ -58,49 +60,3 @@
 		</article>
 	</WindowFrame>
 </section>
-
-<style>
-	.page-window__content {
-		background: var(--arcade-surface);
-		border: 2px solid;
-		border-color: var(--arcade-window-shadow) var(--arcade-outline-light)
-			var(--arcade-outline-light) var(--arcade-window-shadow);
-		padding: 18px 24px;
-	}
-
-	.page-window__section + .page-window__section {
-		margin-top: 28px;
-	}
-
-	h3 {
-		font-size: 20px;
-		margin: 0 0 12px;
-	}
-
-	p,
-	li,
-	blockquote {
-		font-size: 14px;
-		line-height: 1.6;
-	}
-
-	p,
-	blockquote,
-	ul {
-		margin: 0 0 14px;
-	}
-
-	blockquote {
-		border-left: 8px solid var(--arcade-outline-dark);
-		margin-left: 0;
-		padding-left: 15px;
-	}
-
-	ul {
-		padding-left: 20px;
-	}
-
-	li + li {
-		margin-top: 8px;
-	}
-</style>

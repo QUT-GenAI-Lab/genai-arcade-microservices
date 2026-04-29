@@ -14,16 +14,7 @@
 </script>
 
 <WindowFrame {title} icon={myComputerIcon} class={twMerge('size-full', className)}>
-	<div class="widget-content">
+	<div class="bg-white bevel-sunken">
 		{@render children()}
 	</div>
 </WindowFrame>
-
-<style>
-	.widget-content {
-		background: var(--arcade-surface);
-		border: 2px solid;
-		border-color: var(--arcade-window-shadow) var(--arcade-outline-light)
-			var(--arcade-outline-light) var(--arcade-window-shadow);
-	}
-</style>

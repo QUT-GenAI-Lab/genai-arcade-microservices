@@ -198,6 +198,16 @@
 		return currentExpression;
 	});
 
+	const sectionMetaClass = 'text-xs text-muted-text';
+	const displayLabelClass = 'mb-1 text-xs font-bold';
+	const displayBaseClass =
+		'overflow-hidden border border-t-muted-text border-r-outline-light border-b-outline-light border-l-muted-text bg-surface px-2 py-1.5 text-right font-[Courier_New,Courier,monospace] text-ellipsis whitespace-nowrap';
+	const keypadButtonClass =
+		'min-h-9 cursor-pointer border-2 border-t-outline-light border-r-outline-dark border-b-outline-dark border-l-outline-light bg-surface-variant font-[Tahoma,Geneva,Verdana,sans-serif] text-[13px] font-bold text-text hover:border-t-outline-dark hover:border-r-outline-light hover:border-b-outline-light hover:border-l-outline-dark focus-visible:border-t-outline-dark focus-visible:border-r-outline-light focus-visible:border-b-outline-light focus-visible:border-l-outline-dark focus-visible:outline-none disabled:cursor-default disabled:text-muted-text disabled:hover:border-t-outline-light disabled:hover:border-r-outline-dark disabled:hover:border-b-outline-dark disabled:hover:border-l-outline-light disabled:focus-visible:border-t-outline-light disabled:focus-visible:border-r-outline-dark disabled:focus-visible:border-b-outline-dark disabled:focus-visible:border-l-outline-light';
+	const noticeClass =
+		'bevel-raised-thin bg-surface-variant px-2.5 py-2 text-xs leading-6';
+	const exampleButtonClass = 'min-h-7.5 px-2.5 py-1.25 text-[11px]';
+
 	async function connectModel() {
 		loading = true;
 		error = null;
@@ -415,81 +425,101 @@
 
 <Title value="LLM Calculator" />
 
-<div class="calculator-window__body" aria-live="polite">
-	<div class="grid gap-6 sm:grid-cols-1 md:grid-cols-2">
-		<div class="calc-section">
-			<p class="section-header__meta mb-2">
+<div class="bg-surface-variant p-3" aria-live="polite">
+	<div class="grid gap-6 md:grid-cols-2">
+		<div>
+			<p class={['mb-2', sectionMetaClass]}>
 				Type or use the keypad to enter an equation. Press '=' to see the correct result and the
 				model's answer.
 			</p>
 			<div>
-				<div class="display-label">{secondaryLabel}</div>
-				<div class="display display--secondary">{secondaryDisplay}</div>
+				<div class={displayLabelClass}>{secondaryLabel}</div>
+				<div class={[displayBaseClass, 'min-h-5 text-xs']}>{secondaryDisplay}</div>
 			</div>
 
 			<div class="mt-2">
-				<div class="display-label flex items-center justify-between">
+				<div class={[displayLabelClass, 'flex items-center justify-between']}>
 					LLM output
-					<span class="panel-header__meta">Model: {modelStatus}</span>
+					<span class={sectionMetaClass}>Model: {modelStatus}</span>
 				</div>
-				<div class={['display', 'display--main', computing && 'display--computing']}>
+				<div
+					class={[
+						displayBaseClass,
+						'min-h-10.5 text-2xl font-bold',
+						computing && 'text-muted-text'
+					]}
+				>
 					{mainDisplay}
 				</div>
 			</div>
 
-			<div class="keypad mt-3">
-				<button class="calc-key calc-key--operator" type="button" onclick={clearAll}>C</button>
-				<button class="calc-key calc-key--operator" type="button" onclick={backspace}>
+			<div class="mt-3 grid grid-cols-4 gap-1.5">
+				<button class={[keypadButtonClass, 'text-[#7f0000]']} type="button" onclick={clearAll}
+					>C</button
+				>
+				<button class={[keypadButtonClass, 'text-[#7f0000]']} type="button" onclick={backspace}>
 					Back
 				</button>
 				<button
-					class="calc-key calc-key--operator"
+					class={[keypadButtonClass, 'text-[#7f0000]']}
 					type="button"
 					onclick={() => handleOperation('/')}
 				>
 					/
 				</button>
 				<button
-					class="calc-key calc-key--operator"
+					class={[keypadButtonClass, 'text-[#7f0000]']}
 					type="button"
 					onclick={() => handleOperation('*')}
 				>
 					*
 				</button>
 				{#each ['7', '8', '9'] as digit (digit)}
-					<button class="calc-key" type="button" onclick={() => handleNum(digit)}>{digit}</button>
+					<button class={keypadButtonClass} type="button" onclick={() => handleNum(digit)}
+						>{digit}</button
+					>
 				{/each}
 				<button
-					class="calc-key calc-key--operator"
+					class={[keypadButtonClass, 'text-[#7f0000]']}
 					type="button"
 					onclick={() => handleOperation('-')}
 				>
 					-
 				</button>
 				{#each ['4', '5', '6'] as digit (digit)}
-					<button class="calc-key" type="button" onclick={() => handleNum(digit)}>{digit}</button>
+					<button class={keypadButtonClass} type="button" onclick={() => handleNum(digit)}
+						>{digit}</button
+					>
 				{/each}
 				<button
-					class="calc-key calc-key--operator"
+					class={[keypadButtonClass, 'text-[#7f0000]']}
 					type="button"
 					onclick={() => handleOperation('+')}
 				>
 					+
 				</button>
 				{#each ['1', '2', '3'] as digit (digit)}
-					<button class="calc-key" type="button" onclick={() => handleNum(digit)}>{digit}</button>
+					<button class={keypadButtonClass} type="button" onclick={() => handleNum(digit)}
+						>{digit}</button
+					>
 				{/each}
-				<button class="calc-key calc-key--equals" type="button" onclick={() => void calculate()}>
+				<button
+					class={[keypadButtonClass, 'col-4 row-[4/span_2] text-primary']}
+					type="button"
+					onclick={() => void calculate()}
+				>
 					=
 				</button>
-				<button class="calc-key calc-key--wide" type="button" onclick={() => handleNum('0')}
-					>0</button
+				<button
+					class={[keypadButtonClass, 'col-[span_2]']}
+					type="button"
+					onclick={() => handleNum('0')}>0</button
 				>
-				<button class="calc-key" type="button" onclick={() => handleNum('.')}>.</button>
+				<button class={keypadButtonClass} type="button" onclick={() => handleNum('.')}>.</button>
 			</div>
 		</div>
 
-		<div class="sidebar-section">
+		<div class="flex flex-col">
 			<Button
 				variant="secondary"
 				className="w-full mb-4"
@@ -500,12 +530,14 @@
 			</Button>
 
 			{#if error}
-				<p class={['notice', 'notice--error', 'mb-4']}>{error}</p>
+				<p class={[noticeClass, 'mb-4 text-[#7f0000]']}>{error}</p>
 			{/if}
 
-			<div class="info-panel">
-				<div class="display-label">Difference</div>
-				<p class="section-header__meta mb-2">
+			<div
+				class="grow bevel-raised-thin bg-surface-variant p-2.5"
+			>
+				<div class={displayLabelClass}>Difference</div>
+				<p class={['mb-2', sectionMetaClass]}>
 					{#if lastEquation && !computing && lastEquation.correct !== mainDisplay}
 						{@const diff = Number.parseFloat(lastEquation.correct) - Number.parseFloat(mainDisplay)}
 						{@const isHigher = diff > 0}
@@ -527,9 +559,9 @@
 				</p>
 				<div
 					class={[
-						'display',
-						'display--secondary',
-						lastEquation && lastEquation.correct !== mainDisplay && 'display--computing'
+						displayBaseClass,
+						'min-h-5 text-xs',
+						lastEquation && lastEquation.correct !== mainDisplay && 'text-muted-text'
 					]}
 				>
 					{lastEquation && !computing
@@ -538,15 +570,15 @@
 				</div>
 
 				<div class="mt-4">
-					<div class="display-label">Sample equations</div>
-					<p class="section-header__meta mb-2">
+					<div class={displayLabelClass}>Sample equations</div>
+					<p class={['mb-2', sectionMetaClass]}>
 						Load a preset, then press equals to compare the model against the exact result.
 					</p>
-					<div class="example-grid">
+					<div class="flex flex-wrap gap-2">
 						{#each EXAMPLES as example (example.label)}
 							<Button
 								variant="secondary"
-								className="example-grid__button"
+								className={exampleButtonClass}
 								onclick={() => loadExample(example)}
 							>
 								{example.left}
@@ -560,134 +592,3 @@
 		</div>
 	</div>
 </div>
-
-<style>
-	h2,
-	p {
-		margin: 0;
-	}
-
-	.calculator-window__body {
-		background: var(--arcade-surface-variant);
-		padding: 12px;
-	}
-
-	.section-header__meta {
-		font-size: 12px;
-		color: var(--arcade-muted-text);
-	}
-
-	.info-panel {
-		background: var(--arcade-surface-variant);
-		padding: 10px;
-		flex-grow: 1;
-		border: 1px solid;
-		border-color: var(--arcade-outline-light) var(--arcade-outline-dark) var(--arcade-outline-dark)
-			var(--arcade-outline-light);
-	}
-
-	.display-label {
-		font-size: 12px;
-		font-weight: 700;
-		margin-bottom: 4px;
-	}
-
-	.display {
-		background: var(--arcade-surface);
-		border: 1px solid;
-		border-color: var(--arcade-muted-text) var(--arcade-outline-light) var(--arcade-outline-light)
-			var(--arcade-muted-text);
-		font-family: 'Courier New', Courier, monospace;
-		overflow: hidden;
-		padding: 6px 8px;
-		text-align: right;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.display--secondary {
-		font-size: 12px;
-		min-height: 20px;
-	}
-
-	.display--main {
-		font-size: 24px;
-		font-weight: 700;
-		min-height: 42px;
-	}
-
-	.display--computing {
-		color: var(--arcade-muted-text);
-	}
-
-	.keypad {
-		display: grid;
-		gap: 6px;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-	}
-
-	.calc-key {
-		background: var(--arcade-surface-variant);
-		border: 2px solid;
-		border-color: var(--arcade-outline-light) var(--arcade-outline-dark) var(--arcade-outline-dark)
-			var(--arcade-outline-light);
-		color: var(--arcade-text);
-		cursor: pointer;
-		font-family: Tahoma, Geneva, Verdana, sans-serif;
-		font-size: 13px;
-		font-weight: 700;
-		min-height: 36px;
-	}
-
-	.calc-key:hover,
-	.calc-key:focus-visible {
-		border-color: var(--arcade-outline-dark) var(--arcade-outline-light) var(--arcade-outline-light)
-			var(--arcade-outline-dark);
-		outline: none;
-	}
-
-	.calc-key:disabled {
-		color: var(--arcade-muted-text);
-		cursor: default;
-	}
-
-	.calc-key--operator {
-		color: #7f0000;
-	}
-
-	.calc-key--equals {
-		color: var(--arcade-primary);
-		grid-column: 4;
-		grid-row: 4 / span 2;
-	}
-
-	.calc-key--wide {
-		grid-column: span 2;
-	}
-
-	.example-grid {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px;
-	}
-
-	:global(.example-grid__button) {
-		font-size: 11px;
-		min-height: 30px;
-		padding: 5px 10px;
-	}
-
-	.notice {
-		background: var(--arcade-surface-variant);
-		border: 1px solid;
-		border-color: var(--arcade-outline-light) var(--arcade-outline-dark) var(--arcade-outline-dark)
-			var(--arcade-outline-light);
-		font-size: 12px;
-		line-height: 1.5;
-		padding: 8px 10px;
-	}
-
-	.notice--error {
-		color: #7f0000;
-	}
-</style>

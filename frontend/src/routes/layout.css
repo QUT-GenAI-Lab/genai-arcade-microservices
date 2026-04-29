@@ -1,17 +1,42 @@
 @import 'tailwindcss';
 
-:root {
-	--arcade-primary: #00007f;
-	--arcade-on-primary: #f8fbff;
-	--arcade-background: #ad5d8d;
-	--arcade-surface-chrome: #bfb8bf;
-	--arcade-surface-variant: #cccccc;
-	--arcade-surface: #fff8ff;
-	--arcade-text: #111827;
-	--arcade-muted-text: #5f6470;
-	--arcade-outline-dark: #000000;
-	--arcade-outline-light: #fff8ff;
-	--arcade-window-shadow: #7f787f;
+@theme {
+	--color-primary: #00007f;
+	--color-on-primary: #f8fbff;
+	--color-background: #ad5d8d;
+	--color-surface-chrome: #bfb8bf;
+	--color-surface-variant: #cccccc;
+	--color-surface: #fff8ff;
+	--color-text: #111827;
+	--color-muted-text: #5f6470;
+	--color-outline-dark: #000000;
+	--color-outline-light: #fff8ff;
+	--color-window-shadow: #7f787f;
+}
+
+@utility bevel-raised-thin {
+	@apply shadow-[inset_1px_1px_0_var(--color-outline-light),inset_-1px_-1px_0_var(--color-window-shadow)];
+}
+
+@utility bevel-raised {
+	@apply shadow-[inset_1px_1px_0_var(--color-outline-light),inset_-1px_-1px_0_var(--color-outline-dark),inset_2px_2px_0_var(--color-surface-variant),inset_-2px_-2px_0_var(--color-window-shadow)];
+}
+
+@utility bevel-sunken-thin {
+	@apply  shadow-[inset_1px_1px_0_var(--color-window-shadow),inset_-1px_-1px_0_var(--color-outline-light)];
+}
+
+@utility bevel-sunken {
+	@apply  shadow-[inset_1px_1px_0_var(--color-window-shadow),inset_-1px_-1px_0_var(--color-outline-light),inset_2px_2px_0_var(--color-outline-dark),inset_-2px_-2px_0_var(--color-surface-variant)];
+}
+
+@utility bevel-compound {
+	@apply border border-outline-dark shadow-[inset_1px_1px_0_var(--color-outline-light),inset_-1px_-1px_0_var(--color-window-shadow),inset_2px_2px_0_var(--color-surface-variant),inset_-2px_-2px_0_var(--color-surface-chrome)];
+}
+
+@utility bevel-groove {
+	@apply border border-window-shadow;
+	outline: 1px solid var(--color-outline-light);
 }
 
 html {
@@ -39,19 +64,19 @@ ol {
 }
 
 ::-webkit-scrollbar-thumb {
-	background-color: var(--arcade-surface-variant);
+	background-color: var(--color-surface-variant);
 	border: 2px solid;
-	border-color: var(--arcade-outline-light) var(--arcade-outline-dark) var(--arcade-outline-dark)
-		var(--arcade-outline-light);
+	border-color: var(--color-outline-light) var(--color-outline-dark) var(--color-outline-dark)
+		var(--color-outline-light);
 }
 
 ::-webkit-scrollbar-button {
-	background-color: var(--arcade-surface-variant);
+	background-color: var(--color-surface-variant);
 	background-position: center center;
 	background-repeat: no-repeat;
 	border: 2px solid;
-	border-color: var(--arcade-outline-light) var(--arcade-outline-dark) var(--arcade-outline-dark)
-		var(--arcade-outline-light);
+	border-color: var(--color-outline-light) var(--color-outline-dark) var(--color-outline-dark)
+		var(--color-outline-light);
 }
 
 ::-webkit-scrollbar-button:vertical:decrement {

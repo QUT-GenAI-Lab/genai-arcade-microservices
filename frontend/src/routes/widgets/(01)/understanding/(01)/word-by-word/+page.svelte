@@ -103,6 +103,13 @@
 		return `${predictions.data.length} candidates loaded`;
 	});
 
+	const panelMetaClass = 'text-xs font-bold text-muted-text';
+	const noticeClass =
+		'bevel-raised-thin bg-surface px-2.5 py-2 text-xs leading-6';
+	const chipButtonClass = 'min-h-7.5 px-2.5 py-1.25 text-[11px]';
+	const predictionButtonClass =
+		'grid min-h-7.5 gap-2 px-2.5 py-1.25 text-left text-[11px] [grid-template-columns:auto_1fr_auto]';
+
 	async function fetchPredictions(text: string): Promise<PredictionResult | null> {
 		const prompt = text.trim();
 		if (!prompt) {
@@ -224,15 +231,17 @@
 
 <Title value="Next Word Predictor" />
 
-<div class="widget-shell">
-	<section class="widget-panel">
-		<div class="prompt-header">
+<div
+	class="grid gap-3 bg-surface-variant p-3 font-[Tahoma,Geneva,Verdana,sans-serif] text-text"
+>
+	<section class="grid gap-2.5">
+		<div class="flex items-start justify-between max-[760px]:block">
 			<div>
-				<div class="prompt-header__title-row">
-					<h2>Prompt</h2>
-					<p class="model-status">Model: {modelStatus}</p>
+				<div class="flex flex-wrap items-baseline gap-x-3 gap-y-2">
+					<h2 class="m-0 text-base leading-[1.2]">Prompt</h2>
+					<p class={['m-0', panelMetaClass]}>Model: {modelStatus}</p>
 				</div>
-				<p class="prompt-header__copy">
+				<p class="mt-1 max-w-[68ch] leading-6">
 					Type a sentence and see the top 10 most likely next words with their probabilities! Click
 					on any prediction to add that word to your text.
 				</p>
@@ -246,7 +255,7 @@
 			bind:value={() => inputText, (value) => setPrompt(value)}
 		/>
 
-		<div class="widget-panel__actions">
+		<div class="flex flex-wrap gap-2">
 			<Button
 				onclick={() => void refreshPredictions(inputText)}
 				disabled={loading || predicting || !inputText.trim()}
@@ -260,18 +269,18 @@
 		</div>
 	</section>
 
-	<section class="widget-panel">
-		<div class="section-header">
+	<section class="grid gap-2.5">
+		<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5">
 			<div>
-				<h2>Example prompts</h2>
+				<h2 class="m-0 text-base leading-[1.2]">Example prompts</h2>
 			</div>
 		</div>
 
-		<div class="example-grid">
+		<div class="flex flex-wrap gap-2">
 			{#each EXAMPLES as example (example)}
 				<Button
 					variant="secondary"
-					className="example-grid__button"
+					className={chipButtonClass}
 					onclick={() => applyExample(example)}
 				>
 					{example}...
@@ -280,12 +289,12 @@
 		</div>
 	</section>
 
-	<section class="widget-panel">
-		<div class="section-header">
+	<section class="grid gap-2.5">
+		<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5">
 			<div>
-				<h2>Top predictions</h2>
+				<h2 class="m-0 text-base leading-[1.2]">Top predictions</h2>
 			</div>
-			<p class="section-header__meta">
+			<p class={['m-0', panelMetaClass]}>
 				{#if predicting}
 					Refreshing results...
 				{:else if predictions?.data.length}
@@ -297,23 +306,23 @@
 		</div>
 
 		{#if loading}
-			<p class="notice">Connecting model...</p>
+			<p class={[noticeClass, 'm-0']}>Connecting model...</p>
 		{:else if error}
-			<p class={['notice', 'notice--error']}>{error}</p>
+			<p class={[noticeClass, 'm-0 text-[#7f0000]']}>{error}</p>
 		{:else if predicting}
-			<p class="notice">Updating predictions...</p>
+			<p class={[noticeClass, 'm-0']}>Updating predictions...</p>
 		{:else if predictions?.data.length}
-			<ol class="prediction-list">
+			<ol class="m-0 flex list-none flex-wrap gap-2 p-0">
 				{#each predictions.data as prediction, index (`${prediction.word}-${prediction.probability}`)}
 					<li>
 						<Button
 							variant="secondary"
-							className="prediction-list__button"
+							className={predictionButtonClass}
 							onclick={() => applyPrediction(prediction.word)}
 						>
-							<span class="prediction-list__rank">{index + 1}.</span>
-							<span class="prediction-list__word">{prediction.word}</span>
-							<span class="prediction-list__probability"
+							<span class="min-w-3.5 text-[11px] text-muted-text">{index + 1}.</span>
+							<span class="text-xs">{prediction.word}</span>
+							<span class="text-[11px] whitespace-nowrap"
 								>{(prediction.probability * 100).toFixed(2)}%</span
 							>
 						</Button>
@@ -321,141 +330,9 @@
 				{/each}
 			</ol>
 		{:else}
-			<p class="notice">
+			<p class={[noticeClass, 'm-0']}>
 				Start with few words. Arcade will surface strongest next-token guesses here.
 			</p>
 		{/if}
 	</section>
 </div>
-
-<style>
-	.widget-shell {
-		color: var(--arcade-text);
-		display: grid;
-		font-family: Tahoma, Geneva, Verdana, sans-serif;
-		gap: 12px;
-		padding: 12px;
-		background: var(--arcade-surface-variant);
-	}
-
-	.widget-panel {
-		display: grid;
-		gap: 10px;
-	}
-
-	.prompt-header {
-		align-items: start;
-		display: flex;
-		justify-content: space-between;
-	}
-
-	.prompt-header__title-row {
-		align-items: baseline;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px 12px;
-	}
-
-	.prompt-header__copy {
-		line-height: 1.5;
-		margin-top: 4px;
-		max-width: 68ch;
-	}
-
-	.model-status,
-	.section-header__meta {
-		color: var(--arcade-muted-text);
-		font-size: 12px;
-		font-weight: 700;
-	}
-
-	h2,
-	p,
-	ol {
-		margin: 0;
-	}
-
-	h2 {
-		font-size: 16px;
-		line-height: 1.2;
-	}
-
-	.widget-panel__actions {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px;
-	}
-
-	.section-header {
-		align-items: baseline;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 6px 12px;
-		justify-content: space-between;
-	}
-
-	.example-grid {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px;
-	}
-
-	:global(.example-grid__button) {
-		font-size: 11px;
-		min-height: 30px;
-		padding: 5px 10px;
-	}
-
-	.prediction-list {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 8px;
-		list-style: none;
-		padding: 0;
-	}
-
-	:global(.prediction-list__button) {
-		display: grid;
-		font-size: 11px;
-		gap: 8px;
-		grid-template-columns: auto 1fr auto;
-		min-height: 30px;
-		padding: 5px 10px;
-		text-align: left;
-	}
-
-	.prediction-list__rank {
-		color: var(--arcade-muted-text);
-		font-size: 11px;
-		min-width: 14px;
-	}
-
-	.prediction-list__word {
-		font-size: 12px;
-	}
-
-	.prediction-list__probability {
-		font-size: 11px;
-		white-space: nowrap;
-	}
-
-	.notice {
-		background: var(--arcade-surface);
-		border: 1px solid;
-		border-color: var(--arcade-outline-light) var(--arcade-outline-dark) var(--arcade-outline-dark)
-			var(--arcade-outline-light);
-		font-size: 12px;
-		line-height: 1.5;
-		padding: 8px 10px;
-	}
-
-	.notice--error {
-		color: #7f0000;
-	}
-
-	@media (max-width: 760px) {
-		.prompt-header {
-			display: block;
-		}
-	}
-</style>

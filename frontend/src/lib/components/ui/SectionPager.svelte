@@ -10,63 +10,34 @@
 	let { previous, next }: Props = $props();
 </script>
 
-<div class="section-pager">
-	<button type="button" onclick={() => jumpToFragment('#top')}>⌂ Home</button>
+<div
+	class="mt-6 grid [grid-template-columns:1fr_2fr_1fr] items-center gap-3 border-t border-t-window-shadow pt-4 text-sm max-[700px]:grid-cols-1 max-[700px]:justify-items-start"
+>
+	<button
+		class="border-0 bg-transparent p-0 text-text hover:underline focus-visible:underline"
+		type="button"
+		onclick={() => jumpToFragment('#top')}
+	>
+		⌂ Home
+	</button>
 
-	<div class="section-pager__center">
+	<div class="flex flex-wrap justify-center gap-6 max-[700px]:justify-start">
 		{#if previous}
-			<button type="button" onclick={() => jumpToFragment(previous.href)}>◀ {previous.label}</button
+			<button
+				class="border-0 bg-transparent p-0 text-text hover:underline focus-visible:underline"
+				type="button"
+				onclick={() => jumpToFragment(previous.href)}>◀ {previous.label}</button
 			>
 		{/if}
 
 		{#if next}
-			<button type="button" onclick={() => jumpToFragment(next.href)}>{next.label} ▶</button>
+			<button
+				class="border-0 bg-transparent p-0 text-text hover:underline focus-visible:underline"
+				type="button"
+				onclick={() => jumpToFragment(next.href)}>{next.label} ▶</button
+			>
 		{/if}
 	</div>
 
 	<div aria-hidden="true"></div>
 </div>
-
-<style>
-	.section-pager {
-		align-items: center;
-		border-top: 1px solid var(--arcade-window-shadow);
-		display: grid;
-		font-size: 14px;
-		gap: 12px;
-		grid-template-columns: 1fr 2fr 1fr;
-		margin-top: 24px;
-		padding-top: 16px;
-	}
-
-	.section-pager__center {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 24px;
-		justify-content: center;
-	}
-
-	button {
-		background: transparent;
-		border: 0;
-		color: var(--arcade-text);
-		padding: 0;
-		text-decoration: none;
-	}
-
-	button:hover,
-	button:focus-visible {
-		text-decoration: underline;
-	}
-
-	@media (max-width: 700px) {
-		.section-pager {
-			grid-template-columns: 1fr;
-			justify-items: start;
-		}
-
-		.section-pager__center {
-			justify-content: flex-start;
-		}
-	}
-</style>

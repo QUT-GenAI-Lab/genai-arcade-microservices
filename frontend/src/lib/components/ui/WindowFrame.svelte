@@ -13,23 +13,32 @@
 	}
 
 	let { title, icon, children, controls = [], class: className = '' }: Props = $props();
+	const controlClass =
+		'inline-flex h-3.5 w-3.5 items-center justify-center bevel-raised bg-surface-variant p-0 text-[10px] leading-none font-bold text-text';
 </script>
 
-<section class={twMerge('window-frame', className)}>
-	<header class="titlebar">
-		<div class="titlebar__label">
+<section
+	class={twMerge(
+		'flex flex-col bevel-raised bg-surface-chrome p-0.5',
+		className
+	)}
+>
+	<header
+		class="flex items-center justify-between bg-primary px-1 pt-0.5 pb-0.75 text-on-primary"
+	>
+		<div class="flex min-w-0 items-center gap-1.5">
 			{#if icon}
-				<img src={icon} alt="" />
+				<img class="h-3.5 w-3.5 shrink-0" src={icon} alt="" />
 			{/if}
-			<h2>{title}</h2>
+			<h2 class="m-0 overflow-hidden text-sm font-bold text-ellipsis whitespace-nowrap">{title}</h2>
 		</div>
 
 		{#if controls.length}
-			<div class="titlebar__controls" aria-label="Window controls">
+			<div class="flex gap-0.75" aria-label="Window controls">
 				{#each controls as control (control.label)}
 					{#if control.href && !control.disabled}
 						<button
-							class="control"
+							class={controlClass}
 							type="button"
 							aria-label={control.label}
 							onclick={() => jumpToFragment(control.href ?? '#top')}
@@ -37,7 +46,10 @@
 							{control.symbol}
 						</button>
 					{:else}
-						<span class={['control', control.disabled && 'control--disabled']} aria-hidden="true">
+						<span
+							class={[controlClass, control.disabled && 'text-muted-text']}
+							aria-hidden="true"
+						>
 							{control.symbol}
 						</span>
 					{/if}
@@ -46,81 +58,7 @@
 		{/if}
 	</header>
 
-	<div class="window-frame__body">
+	<div class="h-full p-0">
 		{@render children?.()}
 	</div>
 </section>
-
-<style>
-	.window-frame {
-		background: var(--arcade-surface-chrome);
-		border: 2px solid;
-		border-color: var(--arcade-outline-light) var(--arcade-outline-dark) var(--arcade-outline-dark)
-			var(--arcade-outline-light);
-		padding: 2px;
-		display: flex;
-		flex-direction: column;
-	}
-
-	.titlebar {
-		align-items: center;
-		background: var(--arcade-primary);
-		color: var(--arcade-on-primary);
-		display: flex;
-		justify-content: space-between;
-		padding: 2px 4px 3px;
-	}
-
-	.titlebar__label {
-		align-items: center;
-		display: flex;
-		gap: 6px;
-		min-width: 0;
-	}
-
-	.titlebar__label img {
-		flex: none;
-		height: 14px;
-		width: 14px;
-	}
-
-	h2 {
-		font-size: 14px;
-		font-weight: 700;
-		margin: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	.titlebar__controls {
-		display: flex;
-		gap: 3px;
-	}
-
-	.control {
-		align-items: center;
-		background: var(--arcade-surface-variant);
-		border: 2px solid;
-		border-color: var(--arcade-outline-light) var(--arcade-outline-dark) var(--arcade-outline-dark)
-			var(--arcade-outline-light);
-		color: var(--arcade-text);
-		display: inline-flex;
-		font-size: 10px;
-		font-weight: 700;
-		height: 14px;
-		justify-content: center;
-		line-height: 1;
-		padding: 0;
-		width: 14px;
-	}
-
-	.control--disabled {
-		color: var(--arcade-muted-text);
-	}
-
-	.window-frame__body {
-		padding: 0;
-		height: 100%;
-	}
-</style>

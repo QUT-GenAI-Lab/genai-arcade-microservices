@@ -11,22 +11,7 @@
 </script>
 
 <WindowFrame {title} {icon}>
-	<div class="notice">
-		<p>{body}</p>
+	<div class="bg-white px-5.5 py-4.5 text-center bevel-sunken">
+		<p class="m-0">{body}</p>
 	</div>
 </WindowFrame>
-
-<style>
-	.notice {
-		background: var(--arcade-surface);
-		border: 2px solid;
-		border-color: var(--arcade-window-shadow) var(--arcade-outline-light)
-			var(--arcade-outline-light) var(--arcade-window-shadow);
-		padding: 18px 22px;
-		text-align: center;
-	}
-
-	p {
-		margin: 0;
-	}
-</style>

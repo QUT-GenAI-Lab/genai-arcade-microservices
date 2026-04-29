@@ -25,60 +25,17 @@
 	{type}
 	{disabled}
 	class={[
-		'button',
-		`button--${variant}`,
-		pressed && 'button--pressed',
-		disabled && 'button--disabled',
+		'inline-flex min-h-8.5 items-center justify-center gap-2 border-2 px-3.5 py-1.75 text-center font-[Tahoma,Geneva,Verdana,sans-serif] text-xs leading-[1.2] font-bold no-underline',
+		'border-t-outline-light border-r-outline-dark border-b-outline-dark border-l-outline-light',
+		'bg-primary text-on-primary',
+		'cursor-pointer hover:border-t-outline-dark hover:border-r-outline-light hover:border-b-outline-light hover:border-l-outline-dark focus-visible:border-t-outline-dark focus-visible:border-r-outline-light focus-visible:border-b-outline-light focus-visible:border-l-outline-dark focus-visible:outline-none',
+		variant === 'secondary' && 'bg-surface-variant text-text',
+		pressed &&
+			'border-t-outline-dark border-r-outline-light border-b-outline-light border-l-outline-dark',
+		disabled &&
+			'cursor-default text-muted-text disabled:hover:border-t-outline-light disabled:hover:border-r-outline-dark disabled:hover:border-b-outline-dark disabled:hover:border-l-outline-light disabled:focus-visible:border-t-outline-light disabled:focus-visible:border-r-outline-dark disabled:focus-visible:border-b-outline-dark disabled:focus-visible:border-l-outline-light',
 		className
 	]}
 >
 	{@render children?.()}
 </button>
-
-<style>
-	.button {
-		align-items: center;
-		background: var(--arcade-primary);
-		border: 2px solid;
-		border-color: var(--arcade-outline-light) var(--arcade-outline-dark) var(--arcade-outline-dark)
-			var(--arcade-outline-light);
-		color: var(--arcade-on-primary);
-		cursor: pointer;
-		display: inline-flex;
-		font-family: Tahoma, Geneva, Verdana, sans-serif;
-		font-size: 12px;
-		font-weight: 700;
-		gap: 8px;
-		justify-content: center;
-		line-height: 1.2;
-		min-height: 34px;
-		padding: 7px 14px;
-		text-align: center;
-		text-decoration: none;
-	}
-
-	.button--secondary {
-		background: var(--arcade-surface-variant);
-		color: var(--arcade-text);
-	}
-
-	.button:hover,
-	.button:focus-visible,
-	.button--pressed {
-		border-color: var(--arcade-outline-dark) var(--arcade-outline-light) var(--arcade-outline-light)
-			var(--arcade-outline-dark);
-		outline: none;
-	}
-
-	.button--disabled {
-		color: var(--arcade-muted-text);
-		cursor: default;
-	}
-
-	.button--disabled:hover,
-	.button--disabled:focus-visible {
-		border-color: var(--arcade-outline-light) var(--arcade-outline-dark) var(--arcade-outline-dark)
-			var(--arcade-outline-light);
-		outline: none;
-	}
-</style>

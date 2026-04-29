@@ -9,81 +9,24 @@
 	let { items }: Props = $props();
 </script>
 
-<nav class="desktop-nav" aria-label="Primary page navigation">
+<nav class="flex gap-1 max-sm:flex-col" aria-label="Primary page navigation">
 	{#each items as item (item.label)}
-		<button class:compact={item.compact} type="button" onclick={() => jumpToFragment(item.href)}>
-			<div class="desktop-nav__button">
-				<span class="desktop-nav__icon" aria-hidden="true">{item.icon}</span>
-				<span class="desktop-nav__label">{item.label}</span>
+		<button
+			class={[
+				'group block flex-1 basis-0 border-0 bg-transparent p-0 text-inherit',
+				item.compact && 'shrink-0 basis-39 max-sm:basis-auto'
+			]}
+			type="button"
+			onclick={() => jumpToFragment(item.href)}
+		>
+			<div
+				class="flex h-11 w-full flex-col items-center justify-center gap-0.5 border-2 border-t-outline-light border-r-outline-dark border-b-outline-dark border-l-outline-light bg-surface-variant px-2.5 text-center text-text group-hover:border-t-outline-dark group-hover:border-r-outline-light group-hover:border-b-outline-light group-hover:border-l-outline-dark group-focus-visible:border-t-outline-dark group-focus-visible:border-r-outline-light group-focus-visible:border-b-outline-light group-focus-visible:border-l-outline-dark"
+			>
+				<span class="text-lg leading-none" aria-hidden="true">{item.icon}</span>
+				<span class="w-full overflow-hidden text-[10px] font-bold text-ellipsis whitespace-nowrap">
+					{item.label}
+				</span>
 			</div>
 		</button>
 	{/each}
 </nav>
-
-<style>
-	.desktop-nav {
-		display: flex;
-		gap: 4px;
-	}
-
-	button {
-		background: transparent;
-		border: 0;
-		color: inherit;
-		display: block;
-		flex: 1 1 0;
-		padding: 0;
-	}
-
-	.compact {
-		flex: 0 0 156px;
-	}
-
-	.desktop-nav__button {
-		align-items: center;
-		background: var(--arcade-surface-variant);
-		border: 2px solid;
-		border-color: var(--arcade-outline-light) var(--arcade-outline-dark) var(--arcade-outline-dark)
-			var(--arcade-outline-light);
-		color: var(--arcade-text);
-		display: flex;
-		flex-direction: column;
-		gap: 2px;
-		height: 44px;
-		justify-content: center;
-		padding: 0 10px;
-		text-align: center;
-		width: 100%;
-	}
-
-	.desktop-nav__icon {
-		font-size: 18px;
-		line-height: 1;
-	}
-
-	.desktop-nav__label {
-		font-size: 10px;
-		font-weight: 700;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		width: 100%;
-	}
-
-	button:hover .desktop-nav__button,
-	button:focus-visible .desktop-nav__button {
-		border-color: var(--arcade-outline-dark) var(--arcade-outline-light) var(--arcade-outline-light)
-			var(--arcade-outline-dark);
-		outline: none;
-	}
-
-	@media (max-width: 640px) {
-		.desktop-nav {
-			flex-direction: column;
-		}
-
-		.compact {
-			flex-basis: auto;
-		}
-	}
-</style>

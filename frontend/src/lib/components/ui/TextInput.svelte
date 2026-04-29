@@ -76,21 +76,31 @@
 	}
 </script>
 
-<div class={['text-input', className]}>
+<div class={['grid gap-2', className]}>
 	{#if label}
-		<label class="text-input__label" for={id}>{label}</label>
+		<label
+			class="font-[Tahoma,Geneva,Verdana,sans-serif] text-xs font-bold tracking-[0.04em] uppercase"
+			for={id}
+		>
+			{label}
+		</label>
 	{/if}
 
-	<div class={['text-input__field', disabled && 'text-input__field--disabled']}>
+	<div
+		class={[
+			'relative border-2 border-t-window-shadow border-r-outline-light border-b-outline-light border-l-window-shadow bg-surface focus-within:border-t-outline-dark focus-within:border-r-outline-light focus-within:border-b-outline-light focus-within:border-l-outline-dark',
+			disabled && 'opacity-[0.72]'
+		]}
+	>
 		{#if suggestionSuffix}
 			{@const cleanedSuggestion = suggestionSuffix.trimStart()}
-			<div class="text-input__overlay" aria-hidden="true">
-				<div
-					class="text-input__overlay-copy"
-					style:transform={`translate(${-overlayLeft}px, ${-overlayTop}px)`}
-				>
+			<div
+				class="pointer-events-none absolute inset-0 z-0 overflow-hidden px-3.5 py-3 font-[Tahoma,Geneva,Verdana,sans-serif] text-sm leading-[1.6] break-words whitespace-pre-wrap text-text"
+				aria-hidden="true"
+			>
+				<div class="min-h-full" style:transform={`translate(${-overlayLeft}px, ${-overlayTop}px)`}>
 					<span>{value}</span>
-					<span class="text-input__suggestion">{cleanedSuggestion}</span>
+					<span class="text-muted-text">{cleanedSuggestion}</span>
 				</div>
 			</div>
 		{/if}
@@ -101,103 +111,17 @@
 			{rows}
 			{disabled}
 			bind:value
-			class="text-input__control"
+			class="relative z-[1] min-h-44 w-full resize-y border-0 bg-transparent px-3.5 py-3 font-[Tahoma,Geneva,Verdana,sans-serif] text-sm leading-[1.6] text-text placeholder:text-muted-text placeholder:opacity-100 focus-visible:outline-none"
 			onkeydown={handleKeydown}
 			onscroll={handleScroll}
 		></textarea>
 	</div>
 
 	{#if hintText}
-		<p class="text-input__hint">{hintText}</p>
+		<p
+			class="m-0 font-[Tahoma,Geneva,Verdana,sans-serif] text-xs leading-6 text-muted-text"
+		>
+			{hintText}
+		</p>
 	{/if}
 </div>
-
-<style>
-	.text-input {
-		display: grid;
-		gap: 8px;
-	}
-
-	.text-input__label,
-	.text-input__hint {
-		font-family: Tahoma, Geneva, Verdana, sans-serif;
-	}
-
-	.text-input__label {
-		font-size: 12px;
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-	}
-
-	.text-input__field {
-		background: var(--arcade-surface);
-		border: 2px solid;
-		border-color: var(--arcade-window-shadow) var(--arcade-outline-light)
-			var(--arcade-outline-light) var(--arcade-window-shadow);
-		position: relative;
-	}
-
-	.text-input__field:focus-within {
-		border-color: var(--arcade-outline-dark) var(--arcade-outline-light) var(--arcade-outline-light)
-			var(--arcade-outline-dark);
-	}
-
-	.text-input__field--disabled {
-		opacity: 0.72;
-	}
-
-	.text-input__overlay,
-	.text-input__control {
-		font-family: Tahoma, Geneva, Verdana, sans-serif;
-		font-size: 14px;
-		line-height: 1.6;
-		padding: 12px 14px;
-	}
-
-	.text-input__overlay {
-		color: var(--arcade-text);
-		inset: 0;
-		overflow: hidden;
-		pointer-events: none;
-		position: absolute;
-		white-space: pre-wrap;
-		word-break: break-word;
-		z-index: 0;
-	}
-
-	.text-input__overlay-copy {
-		min-height: 100%;
-	}
-
-	.text-input__suggestion {
-		color: var(--arcade-muted-text);
-	}
-
-	.text-input__control {
-		background: transparent;
-		border: 0;
-		color: var(--arcade-text);
-		min-height: 11rem;
-		position: relative;
-		resize: vertical;
-		width: 100%;
-		z-index: 1;
-	}
-
-	.text-input__control::placeholder {
-		color: var(--arcade-muted-text);
-		opacity: 1;
-	}
-
-	.text-input__control:focus-visible {
-		outline: none;
-	}
-
-	.text-input__hint {
-		color: var(--arcade-muted-text);
-		font-size: 12px;
-		line-height: 1.5;
-		margin: 0;
-	}
-</style>
