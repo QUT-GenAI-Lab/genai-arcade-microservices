@@ -48,7 +48,6 @@ class LlamaModel:
         return LlamaModel._pipe
 
     @staticmethod
-    @spaces.GPU
     def generate(
         messages: list[dict[str, str]],
         max_tokens: int = 512,

@@ -1,4 +1,6 @@
 from typing import Any
+
+import spaces
 from models.llama import LlamaModel
 import gradio
 
@@ -8,6 +10,7 @@ app = gradio.Server()
 
 
 @app.api(name="generate", description="Text generation using a chat template.")
+@spaces.GPU(duration=10)
 def generate_endpoint(
     messages: list[dict[str, str]],
     model: str = LlamaModel.MODEL_ID,
