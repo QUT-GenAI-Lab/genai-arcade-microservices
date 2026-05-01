@@ -1,5 +1,5 @@
 from typing import Any
-
+from models.llama import LlamaModel
 import gradio
 
 from service import generate, list_models
@@ -9,8 +9,8 @@ app = gradio.Server()
 
 @app.api(name="generate", description="Text generation using a chat template.")
 def generate_endpoint(
-    model: str,
     messages: list[dict[str, str]],
+    model: str = LlamaModel.MODEL_ID,
     max_tokens: int = 512,
     temperature: float = 0.7,
     top_p: float = 0.9,

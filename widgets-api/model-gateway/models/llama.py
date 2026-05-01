@@ -21,12 +21,10 @@ class LlamaModel:
         if LlamaModel._pipe is not None:
             return
 
-        torch_device = (
-            "cuda"
-            if torch.cuda.is_available()
-            else "mps" if torch.backends.mps.is_available() else "cpu"
+        torch_device = "cuda" if torch.cuda.is_available() else "cpu"
+        torch_dtype = (
+            torch.bfloat16 if torch_device in ["cuda", "mps"] else torch.float32
         )
-        torch_dtype = torch.bfloat16 if torch_device in ["cuda", "mps"] else torch.float32
 
         model = AutoModelForCausalLM.from_pretrained(
             self.MODEL_ID,
@@ -80,3 +78,8 @@ class LlamaModel:
                 "total_tokens": prompt_tokens + completion_tokens,
             },
         }
+
+
+# Load the model immediately
+LlamaModel.get_instance()
+print(f"{LlamaModel.MODEL_ID} loaded and ready to generate.")
