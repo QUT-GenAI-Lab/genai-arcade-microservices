@@ -1,0 +1,12 @@
+space_id: qut-genailab/model-gateway-api
+title: Model Gateway API
+emoji: 🤖
+colorFrom: blue
+colorTo: purple
+sdk: gradio
+sdk_version: 6.13.0
+app_file: app.py
+pinned: false
+license: apache-2.0
+python_version: "3.10"
+short_description: API for model gateway to serve LLMs with a unified interface
