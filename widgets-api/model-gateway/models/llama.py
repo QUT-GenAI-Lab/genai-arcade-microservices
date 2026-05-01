@@ -56,6 +56,7 @@ class LlamaModel:
         top_p: float = 0.9,
         stop: list[str] | None = None,
     ) -> dict[str, Any]:
+        print(f"Generating with {LlamaModel.MODEL_ID}...")
         pipe = LlamaModel.get_pipe()
         outputs = pipe(
             messages,
@@ -68,6 +69,11 @@ class LlamaModel:
 
         prompt_tokens = sum(len(msg["content"].split()) for msg in messages)
         completion_tokens = len(content.split())
+
+        print(
+            f"Generation complete. Prompt tokens: {prompt_tokens}, Completion tokens: {completion_tokens}"
+        )
+        print(f"Generated content: {content}")
 
         return {
             "model": LlamaModel.MODEL_ID,
