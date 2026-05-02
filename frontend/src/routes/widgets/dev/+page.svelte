@@ -1,10 +1,12 @@
 <script module>
 	export const title = 'Model Gateway Chat';
+	// Important: This page only works with local Gradio API, as we don't want to expose the model gateway URL publicly.
 	export const hfSpace = 'http://127.0.0.1:7860';
 </script>
 
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
+	import Dropdown from '$lib/components/ui/Dropdown.svelte';
 	import TextInput from '$lib/components/ui/TextInput.svelte';
 	import Title from '$lib/components/title/title.svelte';
 	import { Client } from '@gradio/client';
@@ -29,6 +31,13 @@
 
 	interface GradioResult {
 		data?: unknown;
+	}
+
+	interface ModelInfo {
+		id: string;
+		type: string;
+		backend: string;
+		max_tokens: number;
 	}
 
 	const EXAMPLES = [
@@ -94,6 +103,8 @@
 	let error = $state<string | null>(null);
 	let lastUsage = $state.raw<UsageInfo | null>(null);
 	let requestId = $state(0);
+	let models = $state.raw<ModelInfo[]>([]);
+	let selectedModel = $state('');
 
 	let modelStatus = $derived.by(() => {
 		if (loading) return 'Connecting';
@@ -111,14 +122,37 @@
 	const assistantMsgClass = 'border-l-4 border-secondary';
 	const systemMsgClass = 'border-l-4 border-muted-text italic text-muted-text';
 
+	async function fetchModels() {
+		if (!app) return;
+		try {
+			const result = await app.predict('/models', {});
+			const payload =
+				result && typeof result === 'object' && 'data' in result
+					? (result as GradioResult).data
+					: result;
+			const data = Array.isArray(payload) ? payload[0] : payload;
+			if (data && typeof data === 'object' && data !== null && 'models' in data) {
+				models = (data as { models: ModelInfo[] }).models;
+				if (models.length > 0 && !selectedModel) {
+					selectedModel = models[0].id;
+				}
+			}
+		} catch (errorValue) {
+			console.error('Failed to fetch models:', getErrorMessage(errorValue));
+		}
+	}
+
 	async function connectModel() {
 		loading = true;
 		error = null;
 
 		try {
 			app = await Client.connect(hfSpace);
+			await fetchModels();
 		} catch (errorValue) {
 			app = null;
+			models = [];
+			selectedModel = '';
 			error = `Could not load model: ${getErrorMessage(errorValue)}`;
 		} finally {
 			loading = false;
@@ -151,6 +185,7 @@
 		try {
 			const result = await app.predict('/generate', {
 				messages: messages,
+				model: selectedModel,
 				max_tokens: 512,
 				temperature: 0.7,
 				top_p: 0.9,
@@ -206,11 +241,11 @@
 			<div>
 				<div class="flex flex-wrap items-baseline gap-x-3 gap-y-2">
 					<h2 class="m-0 text-base leading-[1.2]">Chat</h2>
-					<p class={['m-0', panelMetaClass]}>Model: {modelStatus}</p>
+					<p class={['m-0', panelMetaClass]}>Status: {modelStatus}</p>
 				</div>
 				<p class="mt-1 max-w-[68ch] leading-6">
-					Chat with Llama 3.2 3B via the Model Gateway API. Supports multi-turn conversations with
-					system prompt configuration.
+					Chat with available models via the Model Gateway API. Supports multi-turn conversations
+					with system prompt configuration.
 				</p>
 			</div>
 		</div>
@@ -230,6 +265,15 @@
 				placeholder="Set the assistant's behavior..."
 			></textarea>
 		</div>
+
+		<Dropdown
+			id="model-select"
+			label="Model"
+			hint={models.length === 0 ? 'No models available.' : `${models.length} model(s) loaded.`}
+			options={models.map((m) => ({ value: m.id, label: m.id }))}
+			bind:value={selectedModel}
+			disabled={!app || models.length === 0}
+		/>
 
 		{#if chatHistory.length > 0}
 			<div class="grid max-h-96 gap-2 overflow-y-auto">
