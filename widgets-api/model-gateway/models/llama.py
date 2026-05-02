@@ -1,90 +1,59 @@
 from typing import Any
 
-import spaces
-import torch
-from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline, TextStreamer
+from . import config, Model
+
+MODEL_ID = Model.LLAMA_3_2_3B_INSTRUCT.model_id
+
+model = AutoModelForCausalLM.from_pretrained(MODEL_ID, **config.model_config)
+tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, **config.tokenizer_config)
+
+pipe = pipeline(
+    "text-generation",
+    model=model,
+    tokenizer=tokenizer,
+    **config.pipeline_config,
+)
+print(f"{MODEL_ID} loaded successfully.")
+print(f"Model device: {pipe.model.device}")
 
 
-class LlamaModel:
-    _instance: "LlamaModel | None" = None
-    _pipe: Any = None
+def generate(
+    messages: list[dict[str, str]],
+    max_tokens: int = 512,
+    temperature: float = 0.7,
+    top_p: float = 0.9,
+    stop: list[str] | None = None,
+) -> dict[str, Any]:
+    assert pipe.tokenizer is not None, "Tokenizer is not loaded."
 
-    MODEL_ID: str = "meta-llama/Llama-3.2-3B-Instruct"
+    print(f"Generating with {MODEL_ID}...")
+    streamer = TextStreamer(pipe.tokenizer, skip_prompt=True, skip_special_tokens=True)
+    outputs = pipe(
+        messages,
+        max_new_tokens=max_tokens,
+        temperature=temperature,
+        top_p=top_p,
+        do_sample=temperature > 0,
+        # Enable streaming output to console
+        streamer=streamer,
+    )
+    content = outputs[0]["generated_text"][-1]["content"]
 
-    @classmethod
-    def get_instance(cls) -> "LlamaModel":
-        if cls._instance is None:
-            cls._instance = cls()
-        return cls._instance
+    prompt_tokens = sum(len(msg["content"].split()) for msg in messages)
+    completion_tokens = len(content.split())
 
-    def __init__(self) -> None:
-        if LlamaModel._pipe is not None:
-            return
+    print(
+        f"Generation complete. Prompt tokens: {prompt_tokens}, Completion tokens: {completion_tokens}"
+    )
+    print(f"Generated content: {content}")
 
-        torch_device = "cuda" if torch.cuda.is_available() else "cpu"
-        torch_dtype = (
-            torch.bfloat16 if torch_device in ["cuda", "mps"] else torch.float32
-        )
-
-        model = AutoModelForCausalLM.from_pretrained(
-            self.MODEL_ID,
-            torch_dtype=torch_dtype,
-            device_map=torch_device,
-        )
-        tokenizer = AutoTokenizer.from_pretrained(self.MODEL_ID)
-
-        LlamaModel._pipe = pipeline(
-            "text-generation",
-            model=model,
-            tokenizer=tokenizer,
-            torch_dtype=torch_dtype,
-            device_map="auto",
-        )
-
-    @staticmethod
-    def get_pipe() -> Any:
-        if LlamaModel._pipe is None:
-            LlamaModel.get_instance()
-        return LlamaModel._pipe
-
-    @staticmethod
-    def generate(
-        messages: list[dict[str, str]],
-        max_tokens: int = 512,
-        temperature: float = 0.7,
-        top_p: float = 0.9,
-        stop: list[str] | None = None,
-    ) -> dict[str, Any]:
-        print(f"Generating with {LlamaModel.MODEL_ID}...")
-        pipe = LlamaModel.get_pipe()
-        outputs = pipe(
-            messages,
-            max_new_tokens=max_tokens,
-            temperature=temperature,
-            top_p=top_p,
-            do_sample=temperature > 0,
-        )
-        content = outputs[0]["generated_text"][-1]["content"]
-
-        prompt_tokens = sum(len(msg["content"].split()) for msg in messages)
-        completion_tokens = len(content.split())
-
-        print(
-            f"Generation complete. Prompt tokens: {prompt_tokens}, Completion tokens: {completion_tokens}"
-        )
-        print(f"Generated content: {content}")
-
-        return {
-            "model": LlamaModel.MODEL_ID,
-            "content": content,
-            "usage": {
-                "prompt_tokens": prompt_tokens,
-                "completion_tokens": completion_tokens,
-                "total_tokens": prompt_tokens + completion_tokens,
-            },
-        }
-
-
-# Load the model immediately
-LlamaModel.get_instance()
-print(f"{LlamaModel.MODEL_ID} loaded and ready to generate.")
+    return {
+        "model": MODEL_ID,
+        "content": content,
+        "usage": {
+            "prompt_tokens": prompt_tokens,
+            "completion_tokens": completion_tokens,
+            "total_tokens": prompt_tokens + completion_tokens,
+        },
+    }

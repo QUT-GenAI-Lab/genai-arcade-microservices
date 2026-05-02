@@ -1,10 +1,10 @@
 from typing import Any
 
 import spaces
-from models.llama import LlamaModel
 import gradio
 
 from service import generate, list_models
+from models import gemma4_e2b
 
 app = gradio.Server()
 
@@ -13,7 +13,7 @@ app = gradio.Server()
 @spaces.GPU(duration=10)
 def generate_endpoint(
     messages: list[dict[str, str]],
-    model: str = LlamaModel.MODEL_ID,
+    model: str = gemma4_e2b.MODEL_ID,
     max_tokens: int = 512,
     temperature: float = 0.7,
     top_p: float = 0.9,
