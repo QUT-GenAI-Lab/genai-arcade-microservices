@@ -53,8 +53,14 @@ class LazyModel:
     def unload(self):
         # Create a decorator to set the unload callback function for this model. This allows the lazy loading mechanism to call the specified function when unloading the model, ensuring proper cleanup of resources.
         def decorator(func):
-            self.unload_func = func
-            return func
+            def wrapper():
+                print(f"Unloading model '{self.model_id}'...")
+                func()
+                self.is_loaded = False
+                print(f"Model '{self.model_id}' unloaded successfully.")
+
+            self.unload_func = wrapper
+            return wrapper
 
         return decorator
 
