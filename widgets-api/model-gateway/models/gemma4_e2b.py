@@ -2,21 +2,31 @@ from typing import Any
 
 import torch
 from transformers import AutoProcessor, AutoModelForCausalLM, TextStreamer
-from . import Model
+from . import config, Model
+from .lazy_model import LazyModel
 
 MODEL_ID = Model.GEMMA_4_E2B.model_id
+lazy = LazyModel(MODEL_ID)
 
-# Load model
-processor = AutoProcessor.from_pretrained(MODEL_ID)
-
-model = AutoModelForCausalLM.from_pretrained(
-    MODEL_ID, torch_dtype="auto", device_map="auto"
-)
-
-print(f"{MODEL_ID} loaded successfully.")
-print(f"Model device: {model.device}")
+processor = None
+model = None
 
 
+@lazy.unload()
+def clean_up():
+    global processor, model
+    del processor
+    del model
+
+
+@lazy.load()
+def load():
+    global processor, model
+    processor = AutoProcessor.from_pretrained(MODEL_ID, **config.tokenizer_config)
+    model = AutoModelForCausalLM.from_pretrained(MODEL_ID, **config.model_config)
+
+
+@lazy.entry()
 def generate(
     messages: list[dict[str, str]],
     max_tokens: int = 512,
@@ -24,7 +34,9 @@ def generate(
     top_p: float = 0.9,
     stop: list[str] | None = None,
 ) -> dict[str, Any]:
-    print(f"Generating with {MODEL_ID}...")
+    global processor, model
+    assert processor is not None, "Processor is not initialized."
+    assert model is not None, "Model is not loaded."
 
     # Process input
     text = processor.apply_chat_template(
@@ -52,9 +64,13 @@ def generate(
 
     response = processor.decode(outputs[0][input_len:], skip_special_tokens=False)
     content = processor.parse_response(response)
+    if isinstance(content, dict) and "content" in content:
+        content = content["content"]
 
-    prompt_tokens = sum(len(msg["content"].split()) for msg in messages)
-    completion_tokens = len(content.split())
+    prompt_tokens = len(processor.tokenizer.apply_chat_template(messages))
+    completion_tokens = len(
+        processor.tokenizer.encode(content, add_special_tokens=False)
+    )
 
     print(
         f"Generation complete. Prompt tokens: {prompt_tokens}, Completion tokens: {completion_tokens}"

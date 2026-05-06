@@ -2,22 +2,39 @@ from typing import Any
 
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline, TextStreamer
 from . import config, Model
+from .lazy_model import LazyModel
 
 MODEL_ID = Model.LLAMA_3_2_3B_INSTRUCT.model_id
+lazy = LazyModel(MODEL_ID)
 
-model = AutoModelForCausalLM.from_pretrained(MODEL_ID, **config.model_config)
-tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, **config.tokenizer_config)
-
-pipe = pipeline(
-    "text-generation",
-    model=model,
-    tokenizer=tokenizer,
-    **config.pipeline_config,
-)
-print(f"{MODEL_ID} loaded successfully.")
-print(f"Model device: {pipe.model.device}")
+model = None
+tokenizer = None
+pipe = None
 
 
+@lazy.unload()
+def clean_up():
+    global model, tokenizer, pipe
+    del model
+    del tokenizer
+    del pipe
+
+
+@lazy.load()
+def init():
+    global model, tokenizer, pipe
+    model = AutoModelForCausalLM.from_pretrained(MODEL_ID, **config.model_config)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, **config.tokenizer_config)
+
+    pipe = pipeline(
+        "text-generation",
+        model=model,
+        tokenizer=tokenizer,
+        **config.pipeline_config,
+    )
+
+
+@lazy.entry()
 def generate(
     messages: list[dict[str, str]],
     max_tokens: int = 512,
@@ -25,6 +42,8 @@ def generate(
     top_p: float = 0.9,
     stop: list[str] | None = None,
 ) -> dict[str, Any]:
+    global model, tokenizer, pipe
+    assert pipe is not None, "Pipeline is not initialized."
     assert pipe.tokenizer is not None, "Tokenizer is not loaded."
 
     print(f"Generating with {MODEL_ID}...")
@@ -40,8 +59,8 @@ def generate(
     )
     content = outputs[0]["generated_text"][-1]["content"]
 
-    prompt_tokens = sum(len(msg["content"].split()) for msg in messages)
-    completion_tokens = len(content.split())
+    prompt_tokens = len(pipe.tokenizer.apply_chat_template(messages))
+    completion_tokens = len(pipe.tokenizer.encode(content, add_special_tokens=False))
 
     print(
         f"Generation complete. Prompt tokens: {prompt_tokens}, Completion tokens: {completion_tokens}"
