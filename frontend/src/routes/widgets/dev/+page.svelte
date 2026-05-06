@@ -99,7 +99,7 @@
 	let app = $state.raw<Client | null>(null);
 	let systemPrompt = $state('You are a helpful assistant.');
 	let userInput = $state('');
-	let chatHistory = $state.raw<ChatMessage[]>([]);
+	let chatHistory = $state.raw<{ message: ChatMessage; timestamp: Date }[]>([]);
 	let error = $state<string | null>(null);
 	let lastUsage = $state.raw<UsageInfo | null>(null);
 	let requestId = $state(0);
@@ -117,9 +117,9 @@
 	const panelMetaClass = 'text-xs font-bold text-muted-text';
 	const noticeClass = 'bevel-raised-thin bg-surface px-2.5 py-2 text-xs leading-6';
 	const chipButtonClass = 'min-h-7.5 px-2.5 py-1.25 text-[11px]';
-	const messageClass = 'bevel-sunken-thin bg-white px-3 py-2 text-sm leading-6';
+	const messageClass = 'bevel-sunken-thin bg-white px-3 py-2 text-sm leading-6 w-fit max-w-[80%]';
 	const userMsgClass = 'border-l-4 border-primary';
-	const assistantMsgClass = 'border-l-4 border-secondary';
+	const assistantMsgClass = 'border-r-4 border-secondary ml-auto';
 	const systemMsgClass = 'border-l-4 border-muted-text italic text-muted-text';
 
 	async function fetchModels() {
@@ -175,11 +175,11 @@
 
 		const messages: ChatMessage[] = [
 			{ role: 'system', content: systemPrompt },
-			...chatHistory,
+			...chatHistory.map((m) => m.message),
 			{ role: 'user', content: trimmedInput }
 		];
 
-		chatHistory = [...chatHistory, { role: 'user', content: trimmedInput }];
+		chatHistory = [...chatHistory, { message: { role: 'user', content: trimmedInput }, timestamp: new Date() }];
 		userInput = '';
 
 		try {
@@ -196,7 +196,7 @@
 			if (activeRequestId !== requestId) return;
 
 			const response = extractResponse(result);
-			chatHistory = [...chatHistory, { role: 'assistant', content: response.content }];
+			chatHistory = [...chatHistory, { message: { role: 'assistant', content: response.content }, timestamp: new Date() }];
 			lastUsage = response.usage;
 		} catch (errorValue) {
 			if (activeRequestId !== requestId) return;
@@ -230,6 +230,48 @@
 
 	onMount(async () => {
 		await connectModel();
+	});
+
+	let chatContainer = $state<HTMLDivElement>();
+
+	$effect(() => {
+		void chatHistory.length;
+		if (chatContainer) {
+			chatContainer.scrollTop = chatContainer.scrollHeight;
+		}
+	});
+
+	let currentDotIndex = $state(0);
+	let direction = $state<'forward' | 'backward'>('forward');
+	const LENGTH = 24;
+	const MAX_DOTS = 5;
+	onMount(() => {
+		// Animate a moving "..." effect (e.g., "...  ", " ... ", "  ...", "...  ", etc.) to indicate the model is generating a response.
+		const interval = setInterval(() => {
+			// Cycle the dot index forward and backward to create a "ping-pong" effect
+			if (direction === 'forward') {
+				currentDotIndex += 1;
+			} else {
+				currentDotIndex -= 1;
+			}
+
+			// Reverse direction at the ends
+			if (currentDotIndex >= LENGTH - MAX_DOTS) {
+				currentDotIndex = LENGTH - MAX_DOTS;
+				direction = 'backward';
+			} else if (currentDotIndex <= 0) {
+				currentDotIndex = 0;
+				direction = 'forward';
+			}
+		}, 100);
+
+		return () => clearInterval(interval);
+	});
+	const animatedDots = $derived.by(() => {
+		return '.'
+			.repeat(MAX_DOTS)
+			.padStart(currentDotIndex + MAX_DOTS, ' ')
+			.padEnd(LENGTH, ' ');
 	});
 </script>
 
@@ -276,22 +318,28 @@
 		/>
 
 		{#if chatHistory.length > 0}
-			<div class="grid max-h-96 gap-2 overflow-y-auto">
-				{#each chatHistory as message (message.role + '-' + message.content.slice(0, 20))}
+			<div class="grid max-h-96 gap-2 overflow-y-auto" bind:this={chatContainer}>
+				{#each chatHistory as entry (entry.timestamp.toISOString())}
 					<div
 						class={[
 							messageClass,
-							message.role === 'user'
+							entry.message.role === 'user'
 								? userMsgClass
-								: message.role === 'assistant'
+								: entry.message.role === 'assistant'
 									? assistantMsgClass
 									: systemMsgClass
 						]}
 					>
-						<span class="text-xs font-bold text-muted-text uppercase">{message.role}</span>
-						<p class="mt-1 whitespace-pre-wrap">{message.content}</p>
+						<span class="text-xs font-bold text-muted-text uppercase">{entry.message.role}</span>
+						<p class="mt-1 whitespace-pre-wrap">{entry.message.content}</p>
 					</div>
 				{/each}
+				{#if generating}
+					<div class={[messageClass, assistantMsgClass]}>
+						<span class="text-xs font-bold text-muted-text uppercase">assistant</span>
+						<p class="mt-1 whitespace-pre-wrap">{animatedDots}</p>
+					</div>
+				{/if}
 			</div>
 		{:else}
 			<p class={[noticeClass, 'm-0']}>Type a message below to start chatting with the model.</p>
