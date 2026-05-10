@@ -1,5 +1,20 @@
+from dataclasses import dataclass
 from typing import Any
 from enum import Enum
+
+
+@dataclass
+class ModelUsage:
+    prompt_tokens: int
+    completion_tokens: int
+    total_tokens: int
+
+
+@dataclass
+class TextGenerationResult:
+    content: str
+    model: str
+    usage: ModelUsage
 
 
 class Model(Enum):
@@ -13,33 +28,33 @@ class Model(Enum):
 
     def __init__(
         self,
-        model_id: str,
+        id: str,
         model_type: str,
         backend: str,
         max_tokens: int,
     ):
-        self.model_id = model_id
+        self.id = id
         self.model_type = model_type
         self.backend = backend
         self.max_tokens = max_tokens
 
     def __str__(self):
-        return self.model_id
+        return self.id
 
     def __repr__(self):
-        return f"Model(id={self.model_id}, type={self.model_type}, backend={self.backend}, max_tokens={self.max_tokens})"
+        return f"Model(id={self.id}, type={self.model_type}, backend={self.backend}, max_tokens={self.max_tokens})"
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "id": self.model_id,
+            "id": self.id,
             "type": self.model_type,
             "backend": self.backend,
             "max_tokens": self.max_tokens,
         }
 
 
-AVAILABLE_MODELS = [model.to_dict() for model in Model]
+AVAILABLE_MODELS = [model for model in Model]
 
 
-def get_available_models() -> list[dict[str, Any]]:
+def get_available_models():
     return AVAILABLE_MODELS

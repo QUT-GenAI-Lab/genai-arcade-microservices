@@ -4,7 +4,7 @@ import spaces
 import gradio
 
 from service import generate, list_models
-from models import gemma4_e2b
+from models import gemma4_e2b, TextGenerationResult
 
 app = gradio.Server()
 
@@ -18,7 +18,7 @@ def generate_endpoint(
     temperature: float = 0.7,
     top_p: float = 0.9,
     stop: list[str] | None = None,
-) -> dict[str, Any]:
+) -> TextGenerationResult:
     return generate(
         model=model,
         messages=messages,
@@ -31,7 +31,7 @@ def generate_endpoint(
 
 @app.api(name="models", description="List available models and their capabilities.")
 def models_endpoint() -> dict[str, list[dict[str, Any]]]:
-    return list_models()
+    return {"models": [model.to_dict() for model in list_models()]}
 
 
 app.launch()

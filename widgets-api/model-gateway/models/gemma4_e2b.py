@@ -2,10 +2,10 @@ from typing import Any
 
 import torch
 from transformers import AutoProcessor, AutoModelForCausalLM, TextStreamer
-from . import config, Model
+from . import TextGenerationResult, config, Model, ModelUsage
 from .lazy_model import LazyModel
 
-MODEL_ID = Model.GEMMA_4_E2B.model_id
+MODEL_ID = Model.GEMMA_4_E2B.id
 lazy = LazyModel(MODEL_ID)
 
 processor = None
@@ -33,7 +33,7 @@ def generate(
     temperature: float = 0.7,
     top_p: float = 0.9,
     stop: list[str] | None = None,
-) -> dict[str, Any]:
+) -> TextGenerationResult:
     global processor, model
     assert processor is not None, "Processor is not initialized."
     assert model is not None, "Model is not loaded."
@@ -76,13 +76,16 @@ def generate(
         f"Generation complete. Prompt tokens: {prompt_tokens}, Completion tokens: {completion_tokens}"
     )
     print(f"Generated content: {content}")
+    assert type(content) is str, (
+        f"Expected generated content to be a string, but got {type(content)}"
+    )
 
-    return {
-        "model": MODEL_ID,
-        "content": content,
-        "usage": {
-            "prompt_tokens": prompt_tokens,
-            "completion_tokens": completion_tokens,
-            "total_tokens": prompt_tokens + completion_tokens,
-        },
-    }
+    return TextGenerationResult(
+        content=content,
+        model=MODEL_ID,
+        usage=ModelUsage(
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=prompt_tokens + completion_tokens,
+        ),
+    )

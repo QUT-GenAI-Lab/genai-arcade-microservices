@@ -3,7 +3,8 @@ import gc
 import torch
 import os
 
-LAZY_LOAD_ENABLED = os.getenv("LAZY_LOAD", "false").lower() == "true"
+# LAZY_LOAD_ENABLED = os.getenv("LAZY_LOAD", "false").lower() == "true"
+LAZY_LOAD_ENABLED = True
 
 
 class LazyModel:

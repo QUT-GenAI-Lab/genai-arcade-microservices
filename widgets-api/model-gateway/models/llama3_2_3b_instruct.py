@@ -1,10 +1,8 @@
-from typing import Any
-
 from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline, TextStreamer
-from . import config, Model
+from . import TextGenerationResult, ModelUsage, config, Model
 from .lazy_model import LazyModel
 
-MODEL_ID = Model.LLAMA_3_2_3B_INSTRUCT.model_id
+MODEL_ID = Model.LLAMA_3_2_3B_INSTRUCT.id
 lazy = LazyModel(MODEL_ID)
 
 model = None
@@ -41,7 +39,7 @@ def generate(
     temperature: float = 0.7,
     top_p: float = 0.9,
     stop: list[str] | None = None,
-) -> dict[str, Any]:
+) -> TextGenerationResult:
     global model, tokenizer, pipe
     assert pipe is not None, "Pipeline is not initialized."
     assert pipe.tokenizer is not None, "Tokenizer is not loaded."
@@ -67,12 +65,12 @@ def generate(
     )
     print(f"Generated content: {content}")
 
-    return {
-        "model": MODEL_ID,
-        "content": content,
-        "usage": {
-            "prompt_tokens": prompt_tokens,
-            "completion_tokens": completion_tokens,
-            "total_tokens": prompt_tokens + completion_tokens,
-        },
-    }
+    return TextGenerationResult(
+        content=content,
+        model=MODEL_ID,
+        usage=ModelUsage(
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=prompt_tokens + completion_tokens,
+        ),
+    )
