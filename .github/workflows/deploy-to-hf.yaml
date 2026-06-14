@@ -44,23 +44,26 @@ jobs:
 
       - name: Set deploy paths
         run: |
-          echo "APP_DIR=${{ matrix.app }}" >> $GITHUB_ENV
-          echo "MANIFEST_PATH=${{ matrix.app }}/space.yaml" >> $GITHUB_ENV
-          echo "README_PATH=${{ matrix.app }}/README.md" >> $GITHUB_ENV
+          echo "APP_DIR=./${{ matrix.app }}" >> $GITHUB_ENV
+          echo "MANIFEST_PATH=./${{ matrix.app }}/space.yaml" >> $GITHUB_ENV
+          echo "README_PATH=./${{ matrix.app }}/README.md" >> $GITHUB_ENV
 
       - name: Skip unchanged app on push
         if: ${{ github.event_name == 'push' }}
         run: |
           if git diff --quiet HEAD^ HEAD -- "$APP_DIR"; then
             echo "No changes in $APP_DIR, skipping."
+            echo "SKIP=true" >> $GITHUB_ENV
             exit 0
           fi
 
       - name: Extract Space ID
+        if: env.SKIP != 'true'
         run: |
           echo "SPACE_ID=$(yq e '.space_id' \"$MANIFEST_PATH\")" >> $GITHUB_ENV
 
       - name: Inject metadata into README frontmatter
+        if: env.SKIP != 'true'
         run: |
           if [ -f "$README_PATH" ]; then
             echo "Injecting configurations into $README_PATH..."
@@ -94,6 +97,7 @@ jobs:
           fi
 
       - name: Commit injected metadata
+        if: env.SKIP != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -101,6 +105,7 @@ jobs:
           git commit -m "chore: inject HF metadata for $APP_DIR"
 
       - name: Push app subtree to Hugging Face
+        if: env.SKIP != 'true'
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
