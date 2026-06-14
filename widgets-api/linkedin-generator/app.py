@@ -1,9 +1,7 @@
 from typing import Any
-
 import gradio
 
-from gateway import check_gateway_health
-from service import generate_linkedin_post
+from service import check_health, generate_linkedin_post
 
 app = gradio.Server()
 
@@ -13,7 +11,7 @@ app = gradio.Server()
     description="Check whether the model gateway is configured and ready.",
 )
 def health() -> dict[str, Any]:
-    return check_gateway_health()
+    return check_health()
 
 
 @app.api(
@@ -21,6 +19,7 @@ def health() -> dict[str, Any]:
     description="Convert plain text into a LinkedIn-style post through the model gateway.",
 )
 def generate(input_text: str) -> dict[str, Any]:
+    print(f"Received request to generate LinkedIn post with input_text: {input_text!r}")
     return generate_linkedin_post(input_text)
 
 
