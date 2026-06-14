@@ -4,19 +4,18 @@ from typing import Any
 
 import httpx
 
-# TODO: Consider moving the inference gateway client code to a shared, installable package to avoid code duplication across widgets.
-from inference_gateway_client.inference_gateway_client import AuthenticatedClient
-from inference_gateway_client.inference_gateway_client.api.default import (
+from inference_gateway_api_client import AuthenticatedClient
+from inference_gateway_api_client.api.default import (
     get_health,
     post_generate_chat,
 )
-from inference_gateway_client.inference_gateway_client.errors import UnexpectedStatus
-from inference_gateway_client.inference_gateway_client.models import (
+from inference_gateway_api_client.errors import UnexpectedStatus
+from inference_gateway_api_client.models import (
     PostGenerateChatBody,
     PostGenerateChatBodyMessagesItem,
     PostGenerateChatBodyModel,
 )
-from inference_gateway_client.inference_gateway_client.models.post_generate_chat_body_messages_item_role import (
+from inference_gateway_api_client.models.post_generate_chat_body_messages_item_role import (
     PostGenerateChatBodyMessagesItemRole,
 )
 
