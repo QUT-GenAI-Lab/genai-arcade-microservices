@@ -177,7 +177,7 @@
 	const displayLabelClass = 'mb-1 text-xs font-bold';
 	const noticeClass = 'bevel-raised-thin bg-surface-variant px-2.5 py-2 text-xs leading-6';
 	const outputFrameClass =
-		'min-h-60 bevel-sunken bg-white px-3.5 py-3 text-sm leading-[1.6] whitespace-pre-wrap';
+		'min-h-42 bevel-sunken bg-white px-3.5 py-3 text-sm leading-[1.6] whitespace-pre-wrap';
 	const chipButtonClass = 'min-h-7.5 px-2.5 py-1.25 text-[11px]';
 	const historyButtonClass = 'w-full justify-start px-2.5 py-2 text-left text-[11px]';
 
@@ -334,7 +334,7 @@
 <Title value="LinkedIn Generator" />
 
 <div class="grid gap-3 bg-surface-variant p-3 font-[Tahoma,Geneva,Verdana,sans-serif] text-text">
-	<div class="grid gap-3 lg:grid-cols-[minmax(0,1fr)_18rem]">
+	<div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_18rem]">
 		<section class="grid gap-2.5">
 			<div class={[displayLabelClass, 'flex items-center justify-between']}>
 				<span>Plain text</span>
@@ -346,7 +346,7 @@
 
 			<TextInput
 				id="linkedin-input"
-				rows={7}
+				rows={3}
 				placeholder="Write a plain idea, status update, or observation..."
 				bind:value={() => inputText, setInput}
 				disabled={generating}

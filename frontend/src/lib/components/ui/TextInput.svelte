@@ -88,7 +88,7 @@
 
 	<div
 		class={[
-			'relative bevel-sunken bg-white focus-within:bevel-sunken focus-within:bg-white',
+			'relative bg-white bevel-sunken focus-within:bg-white focus-within:bevel-sunken',
 			disabled && 'opacity-[0.72]'
 		]}
 	>
@@ -111,16 +111,14 @@
 			{rows}
 			{disabled}
 			bind:value
-			class="relative z-[1] min-h-44 w-full resize-y border-0 bg-transparent px-3.5 py-3 font-[Tahoma,Geneva,Verdana,sans-serif] text-sm leading-[1.6] text-text placeholder:text-muted-text placeholder:opacity-100 focus-visible:outline-none"
+			class="relative z-[1] w-full resize-y border-0 bg-transparent px-3.5 py-3 font-[Tahoma,Geneva,Verdana,sans-serif] text-sm leading-[1.6] text-text placeholder:text-muted-text placeholder:opacity-100 focus-visible:outline-none"
 			onkeydown={handleKeydown}
 			onscroll={handleScroll}
 		></textarea>
 	</div>
 
 	{#if hintText}
-		<p
-			class="m-0 font-[Tahoma,Geneva,Verdana,sans-serif] text-xs leading-6 text-muted-text"
-		>
+		<p class="m-0 font-[Tahoma,Geneva,Verdana,sans-serif] text-xs leading-6 text-muted-text">
 			{hintText}
 		</p>
 	{/if}
