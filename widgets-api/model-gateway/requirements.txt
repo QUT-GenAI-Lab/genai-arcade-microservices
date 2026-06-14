@@ -1,6 +1,0 @@
-gradio
-torch
-transformers
-accelerate
-spaces
-torchvision
