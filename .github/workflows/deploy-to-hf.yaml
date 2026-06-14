@@ -42,33 +42,50 @@ jobs:
           lfs: true
           fetch-depth: 0
 
-      - name: Inject Metadata and Deploy
-        env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      - name: Set deploy paths
         run: |
-          APP_DIR=${{ matrix.app }}
-          MANIFEST_PATH="$APP_DIR/space.yaml"
-          README_PATH="$APP_DIR/README.md"
+          echo "APP_DIR=${{ matrix.app }}" >> $GITHUB_ENV
+          echo "MANIFEST_PATH=${{ matrix.app }}/space.yaml" >> $GITHUB_ENV
+          echo "README_PATH=${{ matrix.app }}/README.md" >> $GITHUB_ENV
 
-          # 1. Skip logic for automated pushes
-          if [[ "${{ github.event_name }}" == "push" ]]; then
-            if git diff --quiet HEAD^ HEAD -- "$APP_DIR"; then
-              echo "No changes in $APP_DIR, skipping."
-              exit 0
-            fi
+      - name: Skip unchanged app on push
+        if: ${{ github.event_name == 'push' }}
+        run: |
+          if git diff --quiet HEAD^ HEAD -- "$APP_DIR"; then
+            echo "No changes in $APP_DIR, skipping."
+            exit 0
           fi
 
-          # 2. Extract Space ID for routing
-          SPACE_ID=$(yq e '.space_id' "$MANIFEST_PATH")
-          
-          # 3. Inject space.yaml configurations into README.md frontmatter
-          # We remove 'space_id' from the injection so it doesn't clutter the HF config
-          # The 'frontmatter' format in yq allows processing the header of the md file
+      - name: Extract Space ID
+        run: |
+          echo "SPACE_ID=$(yq e '.space_id' \"$MANIFEST_PATH\")" >> $GITHUB_ENV
+
+      - name: Inject metadata into README frontmatter
+        run: |
           if [ -f "$README_PATH" ]; then
             echo "Injecting configurations into $README_PATH..."
-            
-            # This command merges space.yaml (minus space_id) into the README frontmatter
-            yq eval-all --inplace 'select(fileIndex==0).space_id as $id | select(fileIndex==1) | . *= (select(fileIndex==0) | del(.space_id))' "$MANIFEST_PATH" "$README_PATH"
+            # Extract existing frontmatter if it exists
+            if grep -q '^---' "$README_PATH"; then
+              # If frontmatter exists, extract it and merge with new metadata
+              EXISTING_FRONTMATTER=$(sed -n '/^---$/,/^---$/p' "$README_PATH")
+              echo "$EXISTING_FRONTMATTER" > temp_frontmatter.yaml
+              yq e 'select(fileIndex == 0) * select(fileIndex == 1)' temp_frontmatter.yaml <(yq e 'del(.space_id)' "$MANIFEST_PATH") > merged_frontmatter.yaml
+              # Replace old frontmatter with merged frontmatter
+              sed -i '1,/^---$/d' "$README_PATH"
+              echo "---" > temp_readme.md
+              cat merged_frontmatter.yaml >> temp_readme.md
+              echo "---" >> temp_readme.md
+              cat "$README_PATH" >> temp_readme.md
+              mv temp_readme.md "$README_PATH"
+              rm temp_frontmatter.yaml merged_frontmatter.yaml
+            else
+              # If no frontmatter, simply add it at the top
+              echo "---" > temp_readme.md
+              yq e 'del(.space_id)' "$MANIFEST_PATH" >> temp_readme.md
+              echo "---" >> temp_readme.md
+              cat "$README_PATH" >> temp_readme.md
+              mv temp_readme.md "$README_PATH"
+            fi
           else
             echo "Warning: No README.md found in $APP_DIR. Creating one with frontmatter..."
             echo "---" > "$README_PATH"
@@ -76,24 +93,18 @@ jobs:
             echo "---" >> "$README_PATH"
           fi
 
-          # 4. Commit changes locally so subtree push sees them
-          # This commit only exists in the runner's ephemeral environment
+      - name: Commit injected metadata
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add "$README_PATH"
           git commit -m "chore: inject HF metadata for $APP_DIR"
 
-          # 5. Push to Hugging Face
-          # 'Split' creates a temporary local branch containing only the subdirectory
-          # We'll call this temporary branch 'deploy-branch'
+      - name: Push app subtree to Hugging Face
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
           git subtree split --prefix=$APP_DIR -b deploy-branch
-
-          # Add the remote if it doesn't exist (using 'target' as before)
           git remote add target "https://user:$HF_TOKEN@huggingface.co/spaces/$SPACE_ID" || true
-
-          # Use standard git push with --force on the split branch
-          # We are pushing our local 'deploy-branch' to the remote 'main'
           git push target deploy-branch:main --force
-
-          # Clean up the local temporary branch
           git branch -D deploy-branch
