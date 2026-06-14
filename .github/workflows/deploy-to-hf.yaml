@@ -44,9 +44,9 @@ jobs:
 
       - name: Set deploy paths
         run: |
-          echo "APP_DIR=./${{ matrix.app }}" >> $GITHUB_ENV
-          echo "MANIFEST_PATH=./${{ matrix.app }}/space.yaml" >> $GITHUB_ENV
-          echo "README_PATH=./${{ matrix.app }}/README.md" >> $GITHUB_ENV
+          echo "APP_DIR=${{ matrix.app }}" >> $GITHUB_ENV
+          echo "MANIFEST_PATH=${{ matrix.app }}/space.yaml" >> $GITHUB_ENV
+          echo "README_PATH=${{ matrix.app }}/README.md" >> $GITHUB_ENV
 
       - name: Skip unchanged app on push
         if: ${{ github.event_name == 'push' }}
@@ -60,7 +60,8 @@ jobs:
       - name: Extract Space ID
         if: env.SKIP != 'true'
         run: |
-          echo "SPACE_ID=$(yq e '.space_id' \"$MANIFEST_PATH\")" >> $GITHUB_ENV
+          SPACE_ID=$(yq e '.space_id' "$MANIFEST_PATH")
+          echo "SPACE_ID=$SPACE_ID" >> $GITHUB_ENV
 
       - name: Inject metadata into README frontmatter
         if: env.SKIP != 'true'
