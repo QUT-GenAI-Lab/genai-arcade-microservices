@@ -18,7 +18,7 @@ CHATBOT: 6.48135818908
 """
 
 
-def calculate(left_num: float, operation: str, right_num: float) -> str:
+def llm_calculate(left_num: float, operation: str, right_num: float) -> str:
     """Ask the model gateway to calculate an arithmetic expression."""
     input_text = f"{left_num} {operation} {right_num}"
     response = generate_text(input_text=input_text, system_prompt=SYSTEM_PROMPT)

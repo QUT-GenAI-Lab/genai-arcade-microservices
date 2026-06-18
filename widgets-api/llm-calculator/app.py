@@ -3,7 +3,7 @@ from typing import Any
 import gradio
 
 from gateway_wrapper import check_gateway_health
-from service import calculate
+from service import llm_calculate
 
 app = gradio.Server()
 
@@ -21,7 +21,7 @@ def health() -> dict[str, Any]:
     description="Calculate the result of an arithmetic operation between two numbers.",
 )
 def calculate(left_num: float, operation: str, right_num: float) -> str:
-    return calculate(left_num, operation, right_num)
+    return llm_calculate(left_num, operation, right_num)
 
 
 app.launch()
