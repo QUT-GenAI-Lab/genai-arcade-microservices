@@ -1,7 +1,8 @@
 from typing import Any
 import gradio
 
-from service import check_health, generate_linkedin_post
+from service import generate_linkedin_post
+from gateway_wrapper import check_gateway_health
 
 app = gradio.Server()
 
@@ -11,7 +12,7 @@ app = gradio.Server()
     description="Check whether the model gateway is configured and ready.",
 )
 def health() -> dict[str, Any]:
-    return check_health()
+    return check_gateway_health()
 
 
 @app.api(
