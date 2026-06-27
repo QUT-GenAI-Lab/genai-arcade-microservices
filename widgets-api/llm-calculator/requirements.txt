@@ -1,4 +1,0 @@
-gradio
-httpx
-attrs
-inference-gateway-api-client @ git+https://github.com/QUT-GenAI-Lab/inference-gateway-client.git

@@ -1,11 +1,13 @@
 <script module>
 	export const title = 'LLM Calculator';
 	export const hfSpace = 'QUT-GenAILab/server-llm-calculator';
+	export const widgetUrl = '/llm-calculator';
 </script>
 
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
 	import Title from '$lib/components/title/title.svelte';
+	import { postWidget } from '$lib/widgets-api';
 	import { Client } from '@gradio/client';
 	import { onMount } from 'svelte';
 
@@ -14,6 +16,8 @@
 	interface GradioPredictionResult {
 		data?: unknown;
 	}
+
+	const useAws = widgetUrl.length > 0;
 
 	const EXAMPLES = [
 		{
@@ -178,6 +182,10 @@
 			return 'Calculating';
 		}
 
+		if (useAws) {
+			return 'Ready';
+		}
+
 		return app ? 'Ready' : 'Offline';
 	});
 
@@ -204,11 +212,15 @@
 		'overflow-hidden bevel-sunken-thin bg-white px-2 py-1.5 text-right font-[Courier_New,Courier,monospace] text-ellipsis whitespace-nowrap';
 	const keypadButtonClass =
 		'min-h-9 cursor-pointer bevel-raised bg-surface-variant font-[Tahoma,Geneva,Verdana,sans-serif] text-[13px] font-bold text-text hover:bevel-sunken focus-visible:bevel-sunken focus-visible:outline-none disabled:cursor-default disabled:text-muted-text disabled:hover:bevel-raised disabled:focus-visible:bevel-raised';
-	const noticeClass =
-		'bevel-raised-thin bg-surface-variant px-2.5 py-2 text-xs leading-6';
+	const noticeClass = 'bevel-raised-thin bg-surface-variant px-2.5 py-2 text-xs leading-6';
 	const exampleButtonClass = 'min-h-7.5 px-2.5 py-1.25 text-[11px]';
 
 	async function connectModel() {
+		if (useAws) {
+			loading = false;
+			return;
+		}
+
 		loading = true;
 		error = null;
 
@@ -299,7 +311,7 @@
 			return;
 		}
 
-		if (!app) {
+		if (!useAws && !app) {
 			error = 'Model not connected yet.';
 			return;
 		}
@@ -331,11 +343,17 @@
 		mainDisplay = 'Calculating...';
 
 		try {
-			const result = await app.predict('/calculate', {
-				left_num: left,
-				operation: activeOperation,
-				right_num: right
-			});
+			const result: unknown = useAws
+				? await postWidget(`${widgetUrl}/calculate`, {
+						left_num: left,
+						operation: activeOperation,
+						right_num: right
+					})
+				: await app!.predict('/calculate', {
+						left_num: left,
+						operation: activeOperation,
+						right_num: right
+					});
 
 			if (activeRequestId !== requestId) {
 				return;
@@ -533,9 +551,7 @@
 				<p class={[noticeClass, 'mb-4 text-[#7f0000]']}>{error}</p>
 			{/if}
 
-			<div
-				class="grow bevel-raised-thin bg-surface-variant p-2.5"
-			>
+			<div class="grow bg-surface-variant p-2.5 bevel-raised-thin">
 				<div class={displayLabelClass}>Difference</div>
 				<p class={['mb-2', sectionMetaClass]}>
 					{#if lastEquation && !computing && lastEquation.correct !== mainDisplay}

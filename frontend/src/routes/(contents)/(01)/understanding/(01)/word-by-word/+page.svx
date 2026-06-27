@@ -1,5 +1,6 @@
 <script lang='ts'>
-	import Widget from '$lib/widgets/widget.svelte';
+	import * as Frame from '$lib/components/ui/frame';
+	import myComputerIcon from '$lib/assets/images/mycomputer.png';
     import WordByWord from '$routes/widgets/(01)/understanding/(01)/word-by-word/+page.svelte'
 </script>
 
@@ -47,9 +48,14 @@ Most of the time, the model will choose "cat," but it might also pick "dog" or e
 
 ---
 
-<Widget title="Word By Word">
-    <WordByWord/>
-</Widget>
+<Frame.Root class="size-full">
+  <Frame.Header title="Word By Word" icon={myComputerIcon} />
+  <Frame.Body>
+    <div class="bg-white bevel-sunken">
+      <WordByWord/>
+    </div>
+  </Frame.Body>
+</Frame.Root>
 
 ---
 

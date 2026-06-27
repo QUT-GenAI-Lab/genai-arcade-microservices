@@ -1,6 +1,7 @@
 <script module>
-	export const title = 'Next Word Predictor';
-	export const hfSpace = 'qut-genailab/next-word-predictor';
+	export const title = 'Next Token Predictor';
+	export const hfSpace = 'qut-genailab/server-next-token-predictor';
+	export const widgetUrl = '/next-token-predictor';
 </script>
 
 <script lang="ts">
@@ -8,6 +9,7 @@
 	import TextInput from '$lib/components/ui/TextInput.svelte';
 	import Title from '$lib/components/title/title.svelte';
 	import { debounce } from '$lib/utils';
+	import { postWidget } from '$lib/widgets-api';
 	import { Client } from '@gradio/client';
 	import { onMount } from 'svelte';
 
@@ -18,54 +20,81 @@
 		'The quick brown fox',
 		'In the future, we will'
 	];
+	const TOP_K = 10;
+	const useAws = widgetUrl.length > 0;
 
-	interface RawPredictionResult {
-		type: string;
-		time: Date;
-		data: {
-			visible: boolean;
-			value: string;
-			__type__: string;
-		}[];
-		endpoint: string;
-		fn_index: number;
+	interface TokenPrediction {
+		rank: number;
+		token_id: number;
+		token: string;
+		display: string;
+		probability: number;
+		percentage: number;
+		logprob: number;
 	}
 
 	interface PredictionResult {
-		type: string;
-		time: Date;
-		data: {
-			visible: boolean;
-			word: string;
-			probability: number;
-		}[];
-		endpoint: string;
-		fn_index: number;
+		tokens: TokenPrediction[];
 	}
 
-	function parsePredictionResult(raw: RawPredictionResult): PredictionResult {
-		const data = raw.data.map((item) => {
-			const [word, probStr] = item.value.split('|').map((s) => s.trim());
-			const probability = Number.parseFloat(probStr.split(' ')[0] ?? '0');
-			return {
-				visible: item.visible,
-				word,
-				probability
-			};
-		});
+	function firstPayload(result: unknown): unknown {
+		if (result && typeof result === 'object' && 'data' in result) {
+			const data = (result as { data?: unknown }).data;
+			return Array.isArray(data) ? data[0] : data;
+		}
+
+		if (Array.isArray(result)) {
+			return result[0];
+		}
+
+		return result;
+	}
+
+	function parseTokenPrediction(candidate: unknown): TokenPrediction | null {
+		if (!candidate || typeof candidate !== 'object') {
+			return null;
+		}
+
+		const token = candidate as Partial<TokenPrediction>;
+		if (typeof token.token !== 'string' || typeof token.display !== 'string') {
+			return null;
+		}
+
+		const probability = Number(token.probability ?? 0);
+		const percentage = Number(token.percentage ?? probability * 100);
 
 		return {
-			...raw,
-			data: data.filter((item) => item.visible)
+			rank: Number(token.rank ?? 0),
+			token_id: Number(token.token_id ?? 0),
+			token: token.token,
+			display: token.display,
+			probability,
+			percentage,
+			logprob: Number(token.logprob ?? 0)
 		};
 	}
 
-	function buildCompletion(text: string, nextWord: string): string {
-		if (!text) {
-			return nextWord;
+	function parsePredictionResult(result: unknown): PredictionResult {
+		const payload = firstPayload(result);
+
+		if (!payload || typeof payload !== 'object' || !('tokens' in payload)) {
+			return { tokens: [] };
 		}
-		const separator = text.endsWith(' ') ? '' : ' ';
-		return `${text}${separator}${nextWord}`;
+
+		const tokens = (payload as { tokens?: unknown }).tokens;
+		if (!Array.isArray(tokens)) {
+			return { tokens: [] };
+		}
+
+		return {
+			tokens: tokens
+				.map(parseTokenPrediction)
+				.filter((token): token is TokenPrediction => token !== null)
+		};
+	}
+
+	function buildCompletion(text: string, nextToken: string): string {
+		return `${text}${nextToken}`;
 	}
 
 	function getErrorMessage(error: unknown): string {
@@ -80,13 +109,17 @@
 	let error = $state<string | null>(null);
 	let predictionRequestId = $state(0);
 
-	let topPrediction = $derived(predictions?.data[0] ?? null);
+	let topPrediction = $derived(predictions?.tokens[0] ?? null);
 	let suggestion = $derived(
-		topPrediction && inputText.trim() ? buildCompletion(inputText, topPrediction.word) : null
+		topPrediction && inputText.trim() ? buildCompletion(inputText, topPrediction.token) : null
 	);
 	let modelStatus = $derived.by(() => {
 		if (loading) {
 			return 'Connecting';
+		}
+
+		if (useAws) {
+			return 'Ready';
 		}
 
 		return app ? 'Ready' : 'Offline';
@@ -96,24 +129,30 @@
 			return 'Refreshing results...';
 		}
 
-		if (!predictions?.data.length) {
+		if (!predictions?.tokens.length) {
 			return 'No predictions yet';
 		}
 
-		return `${predictions.data.length} candidates loaded`;
+		return `${predictions.tokens.length} candidates loaded`;
 	});
 
 	const panelMetaClass = 'text-xs font-bold text-muted-text';
-	const noticeClass =
-		'bevel-raised-thin bg-surface px-2.5 py-2 text-xs leading-6';
+	const noticeClass = 'bevel-raised-thin bg-surface px-2.5 py-2 text-xs leading-6';
 	const chipButtonClass = 'min-h-7.5 px-2.5 py-1.25 text-[11px]';
 	const predictionButtonClass =
 		'grid min-h-7.5 gap-2 px-2.5 py-1.25 text-left text-[11px] [grid-template-columns:auto_1fr_auto]';
 
 	async function fetchPredictions(text: string): Promise<PredictionResult | null> {
-		const prompt = text.trim();
-		if (!prompt) {
+		if (!text.trim()) {
 			return null;
+		}
+
+		if (useAws) {
+			const result = await postWidget<PredictionResult>(`${widgetUrl}/predict`, {
+				text,
+				top_k: TOP_K
+			});
+			return parsePredictionResult(result);
 		}
 
 		if (!app) {
@@ -124,9 +163,10 @@
 			throw new Error('Model not connected yet.');
 		}
 
-		const result = (await app.predict('/update_predictions', {
-			text: prompt
-		})) as RawPredictionResult;
+		const result = await app.predict('/predict', {
+			text,
+			top_k: TOP_K
+		});
 		return parsePredictionResult(result);
 	}
 
@@ -168,6 +208,11 @@
 	}, 450);
 
 	async function connectModel() {
+		if (useAws) {
+			loading = false;
+			return;
+		}
+
 		loading = true;
 		error = null;
 
@@ -210,8 +255,8 @@
 		void refreshPredictions(example);
 	}
 
-	function applyPrediction(word: string) {
-		const nextValue = buildCompletion(inputText, word);
+	function applyPrediction(token: string) {
+		const nextValue = buildCompletion(inputText, token);
 		inputText = nextValue;
 		void refreshPredictions(nextValue);
 	}
@@ -229,11 +274,9 @@
 	});
 </script>
 
-<Title value="Next Word Predictor" />
+<Title value="Next Token Predictor" />
 
-<div
-	class="grid gap-3 bg-surface-variant p-3 font-[Tahoma,Geneva,Verdana,sans-serif] text-text"
->
+<div class="grid gap-3 bg-surface-variant p-3 font-[Tahoma,Geneva,Verdana,sans-serif] text-text">
 	<section class="grid gap-2.5">
 		<div class="flex items-start justify-between max-[760px]:block">
 			<div>
@@ -242,8 +285,8 @@
 					<p class={['m-0', panelMetaClass]}>Model: {modelStatus}</p>
 				</div>
 				<p class="mt-1 max-w-[68ch] leading-6">
-					Type a sentence and see the top 10 most likely next words with their probabilities! Click
-					on any prediction to add that word to your text.
+					Type a sentence and see the top 10 most likely next tokens with their probabilities! Click
+					on any prediction to add that token to your text.
 				</p>
 			</div>
 		</div>
@@ -260,7 +303,7 @@
 				onclick={() => void refreshPredictions(inputText)}
 				disabled={loading || predicting || !inputText.trim()}
 			>
-				{predicting ? 'Predicting...' : 'Predict next word'}
+				{predicting ? 'Predicting...' : 'Predict next token'}
 			</Button>
 			<Button variant="secondary" onclick={clearPrompt} disabled={!inputText}>Clear prompt</Button>
 			<Button variant="secondary" onclick={() => void connectModel()} disabled={loading}>
@@ -297,8 +340,8 @@
 			<p class={['m-0', panelMetaClass]}>
 				{#if predicting}
 					Refreshing results...
-				{:else if predictions?.data.length}
-					{predictionSummary}. Top guess: {topPrediction?.word ?? '--'}.
+				{:else if predictions?.tokens.length}
+					{predictionSummary}. Top guess: {topPrediction?.display ?? '--'}.
 				{:else}
 					{predictionSummary}.
 				{/if}
@@ -311,20 +354,18 @@
 			<p class={[noticeClass, 'm-0 text-[#7f0000]']}>{error}</p>
 		{:else if predicting}
 			<p class={[noticeClass, 'm-0']}>Updating predictions...</p>
-		{:else if predictions?.data.length}
+		{:else if predictions?.tokens.length}
 			<ol class="m-0 flex list-none flex-wrap gap-2 p-0">
-				{#each predictions.data as prediction, index (`${prediction.word}-${prediction.probability}`)}
+				{#each predictions.tokens as prediction (`${prediction.rank}-${prediction.token_id}-${prediction.token}`)}
 					<li>
 						<Button
 							variant="secondary"
 							className={predictionButtonClass}
-							onclick={() => applyPrediction(prediction.word)}
+							onclick={() => applyPrediction(prediction.token)}
 						>
-							<span class="min-w-3.5 text-[11px] text-muted-text">{index + 1}.</span>
-							<span class="text-xs">{prediction.word}</span>
-							<span class="text-[11px] whitespace-nowrap"
-								>{(prediction.probability * 100).toFixed(2)}%</span
-							>
+							<span class="min-w-3.5 text-[11px] text-muted-text">{prediction.rank}.</span>
+							<span class="text-xs">{prediction.display}</span>
+							<span class="text-[11px] whitespace-nowrap">{prediction.percentage.toFixed(2)}%</span>
 						</Button>
 					</li>
 				{/each}

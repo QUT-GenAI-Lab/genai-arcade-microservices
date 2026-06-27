@@ -1,3 +1,0 @@
-project_name_override: inference-gateway-client
-package_name_override: inference_gateway_client
-package_version_override: 0.1.0

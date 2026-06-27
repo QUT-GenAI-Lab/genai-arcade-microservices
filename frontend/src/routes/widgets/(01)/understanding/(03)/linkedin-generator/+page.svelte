@@ -1,12 +1,14 @@
 <script module>
 	export const title = 'LinkedIn Generator';
 	export const hfSpace = 'QUT-GenAILab/server-linkedin-generator';
+	export const widgetUrl = '/linkedin-generator';
 </script>
 
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
 	import TextInput from '$lib/components/ui/TextInput.svelte';
 	import Title from '$lib/components/title/title.svelte';
+	import { getWidget, postWidget } from '$lib/widgets-api';
 	import { Client } from '@gradio/client';
 	import { onMount } from 'svelte';
 
@@ -49,6 +51,8 @@
 		'Our team just finished a big project',
 		'I was too lazy to make coffee this morning'
 	];
+
+	const useAws = widgetUrl.length > 0;
 
 	function getErrorMessage(error: unknown): string {
 		return error instanceof Error ? error.message : 'Unknown error';
@@ -142,7 +146,7 @@
 			return 'Checking';
 		}
 
-		if (!app) {
+		if (!useAws && !app) {
 			return 'Offline';
 		}
 
@@ -158,7 +162,13 @@
 	});
 
 	let canGenerate = $derived(
-		Boolean(app && health?.status === 'success' && inputText.trim() && !connecting && !generating)
+		Boolean(
+			(useAws || app) &&
+			health?.status === 'success' &&
+			inputText.trim() &&
+			!connecting &&
+			!generating
+		)
 	);
 
 	let outputStatus = $derived.by(() => {
@@ -186,9 +196,14 @@
 		error = null;
 
 		try {
-			app = await Client.connect(hfSpace);
-			const result = await app.predict('/health', {});
-			health = parseHealthResult(result);
+			if (useAws) {
+				const result = await getWidget(`${widgetUrl}/health`);
+				health = parseHealthResult(result);
+			} else {
+				app = await Client.connect(hfSpace);
+				const result = await app.predict('/health', {});
+				health = parseHealthResult(result);
+			}
 
 			if (health.status === 'error') {
 				error = health.metadata?.error
@@ -291,7 +306,7 @@
 			return;
 		}
 
-		if (!app || health?.status !== 'success') {
+		if (!(useAws || app) || health?.status !== 'success') {
 			error = 'Model gateway is not ready yet.';
 			return;
 		}
@@ -302,9 +317,9 @@
 		outputText = '';
 
 		try {
-			const result = await app.predict('/generate', {
-				input_text: prompt
-			});
+			const result: unknown = useAws
+				? await postWidget(`${widgetUrl}/generate`, { input_text: prompt })
+				: await app!.predict('/generate', { input_text: prompt });
 			const generation = parseGenerationResult(result);
 
 			if (activeRequestId !== requestId) {
