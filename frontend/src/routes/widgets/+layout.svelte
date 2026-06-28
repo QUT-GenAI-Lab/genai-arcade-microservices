@@ -92,7 +92,7 @@
 						<ShareIcon class="size-3" /> Share
 					</Button>
 				</Dialog.Trigger>
-				<Dialog.Content position="trigger">
+				<Dialog.Content position="center">
 					<Dialog.Header title="Share this widget" icon={ShareIcon} />
 					<div class="flex flex-col gap-3 p-3">
 						<div class="flex flex-col gap-2">
