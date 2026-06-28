@@ -10,6 +10,7 @@
 	import { WidgetBackend } from '$lib/widgets/widget-backend.svelte';
 	import { GenerateResponseSchema } from '$lib/widgets/schemas';
 	import { onMount } from 'svelte';
+	import ChatLoader from '$lib/components/ui/ChatLoader.svelte';
 
 	interface HistoryEntry {
 		id: string;
@@ -333,7 +334,7 @@
 
 		<div class={[outputFrameClass, generating && 'text-muted-text']} aria-live="polite">
 			{#if generating}
-				Generating a LinkedIn-style post...
+				<ChatLoader interval={50} length={48} maxDots={3} />
 			{:else if outputText}
 				{outputText}
 			{:else}

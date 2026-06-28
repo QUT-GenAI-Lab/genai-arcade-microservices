@@ -202,10 +202,22 @@
 
 		<div class="flex flex-wrap gap-2">
 			<Button
-				onclick={() => void refreshPredictions(inputText)}
+				onclick={() => {
+					if (suggestion) {
+						applyPrediction(topPrediction?.token ?? '');
+					} else {
+						refreshPredictions(inputText);
+					}
+				}}
 				disabled={predicting || !inputText.trim()}
 			>
-				{predicting ? 'Predicting...' : 'Predict next token'}
+				{#if predicting}
+					Refreshing...
+				{:else if suggestion}
+					Accept suggestion
+				{:else}
+					Refresh predictions
+				{/if}
 			</Button>
 			<Button variant="secondary" onclick={clearPrompt} disabled={!inputText}>Clear prompt</Button>
 			<Button variant="secondary" onclick={reconnectModel} disabled={connecting}>
@@ -239,7 +251,7 @@
 				{#if predicting}
 					Refreshing results...
 				{:else if predictions?.length}
-					{predictionSummary}. Top guess: {topPrediction?.display ?? '--'}.
+					{predictionSummary}. Top guess: {topPrediction?.display ?? '--'}
 				{:else}
 					{predictionSummary}.
 				{/if}

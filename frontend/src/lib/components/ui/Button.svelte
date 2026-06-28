@@ -28,7 +28,7 @@
 	{type}
 	{disabled}
 	class={twMerge([
-		'inline-flex min-h-8.5 items-center justify-center gap-2 px-3.5 py-1.75 text-center font-[Tahoma,Geneva,Verdana,sans-serif] text-xs leading-[1.2] font-bold no-underline',
+		'inline-flex items-center justify-center gap-2 px-3.5 py-1.75 text-center font-[Tahoma,Geneva,Verdana,sans-serif] text-xs leading-[1.2] font-bold no-underline',
 		'bevel-raised',
 		'bg-primary text-on-primary',
 		'cursor-pointer hover:bevel-sunken focus-visible:bevel-sunken focus-visible:outline-none',
