@@ -1,6 +1,5 @@
 import { z } from 'zod';
-export const WIDGETS_BACKEND_URL =
-	'https://jw0ikxn9w2.execute-api.ap-southeast-2.amazonaws.com/prod';
+export const WIDGETS_BACKEND_URL = 'https://widgets-backend.genai-arcade.net';
 
 const HealthCheckPayloadSchema = z.object({
 	status: z.enum(['pending', 'success', 'error']),
