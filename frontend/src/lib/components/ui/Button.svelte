@@ -7,14 +7,16 @@
 		children?: Snippet;
 		variant?: 'primary' | 'secondary';
 		pressed?: boolean;
-		className?: string;
+		class?: string;
+		size?: 'small' | 'medium' | 'large' | 'icon';
 	}
 
 	let {
 		children,
 		variant = 'primary',
 		pressed = false,
-		className = '',
+		class: className = '',
+		size = 'medium',
 		type = 'button',
 		disabled = false,
 		...props
@@ -34,6 +36,9 @@
 		pressed && 'bevel-sunken',
 		disabled &&
 			'cursor-default opacity-50 disabled:hover:bevel-raised disabled:focus-visible:bevel-raised',
+		size === 'icon' && 'aspect-square h-fit min-h-0 pt-0.5 pr-1 pb-1 pl-0.5',
+		size === 'small' && 'min-h-0.5 gap-1 pt-0.5 pr-1 pb-1 pl-0.5 text-[0.625rem] leading-[1.2]',
+		size === 'large' && 'h-9 px-4 py-2 text-[0.75rem] leading-[1.2]',
 		className
 	])}
 >
