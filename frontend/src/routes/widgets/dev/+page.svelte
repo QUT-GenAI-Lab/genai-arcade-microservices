@@ -179,7 +179,10 @@
 			{ role: 'user', content: trimmedInput }
 		];
 
-		chatHistory = [...chatHistory, { message: { role: 'user', content: trimmedInput }, timestamp: new Date() }];
+		chatHistory = [
+			...chatHistory,
+			{ message: { role: 'user', content: trimmedInput }, timestamp: new Date() }
+		];
 		userInput = '';
 
 		try {
@@ -196,7 +199,10 @@
 			if (activeRequestId !== requestId) return;
 
 			const response = extractResponse(result);
-			chatHistory = [...chatHistory, { message: { role: 'assistant', content: response.content }, timestamp: new Date() }];
+			chatHistory = [
+				...chatHistory,
+				{ message: { role: 'assistant', content: response.content }, timestamp: new Date() }
+			];
 			lastUsage = response.usage;
 		} catch (errorValue) {
 			if (activeRequestId !== requestId) return;
@@ -398,7 +404,7 @@
 			{#each EXAMPLES as example (example.label)}
 				<Button
 					variant="secondary"
-					className={chipButtonClass}
+					class={chipButtonClass}
 					onclick={() => loadExample(example.prompt)}
 				>
 					{example.label}

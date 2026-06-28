@@ -1,6 +1,5 @@
 <script module>
 	export const title = 'LinkedIn Generator';
-	export const hfSpace = 'QUT-GenAILab/server-linkedin-generator';
 	export const widgetUrl = '/linkedin-generator';
 </script>
 
@@ -8,35 +7,9 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import TextInput from '$lib/components/ui/TextInput.svelte';
 	import Title from '$lib/components/title/title.svelte';
-	import { getWidget, postWidget } from '$lib/widgets-api';
-	import { Client } from '@gradio/client';
+	import { WidgetBackend } from '$lib/widgets/widget-backend.svelte';
+	import { GenerateResponseSchema } from '$lib/widgets/schemas';
 	import { onMount } from 'svelte';
-
-	type HealthStatus = 'pending' | 'success' | 'error';
-
-	interface HealthPayload {
-		status: HealthStatus;
-		message: string;
-		metadata?: {
-			checked_at?: string;
-			gateway_url?: string | null;
-			endpoint?: string;
-			model_count?: number;
-			models?: string[];
-			error?: string;
-		};
-	}
-
-	interface GenerationPayload {
-		content: string;
-		model?: string;
-		source_text?: string;
-		usage?: {
-			prompt_tokens?: number;
-			completion_tokens?: number;
-			total_tokens?: number;
-		};
-	}
 
 	interface HistoryEntry {
 		id: string;
@@ -52,74 +25,10 @@
 		'I was too lazy to make coffee this morning'
 	];
 
-	const useAws = widgetUrl.length > 0;
+	const backend = new WidgetBackend(`${widgetUrl}`);
 
 	function getErrorMessage(error: unknown): string {
 		return error instanceof Error ? error.message : 'Unknown error';
-	}
-
-	function firstPayload(result: unknown): unknown {
-		if (result && typeof result === 'object' && 'data' in result) {
-			const data = (result as { data?: unknown }).data;
-
-			if (Array.isArray(data)) {
-				return data[0];
-			}
-
-			return data;
-		}
-
-		if (Array.isArray(result)) {
-			return result[0];
-		}
-
-		return result;
-	}
-
-	function parseHealthResult(result: unknown): HealthPayload {
-		const payload = firstPayload(result);
-
-		if (payload && typeof payload === 'object') {
-			const candidate = payload as Partial<HealthPayload>;
-			const status = candidate.status;
-
-			if (status === 'pending' || status === 'success' || status === 'error') {
-				return {
-					status,
-					message: candidate.message ?? 'Model connection checked.',
-					metadata: candidate.metadata
-				};
-			}
-		}
-
-		return {
-			status: 'error',
-			message: 'Health endpoint returned an unexpected response.',
-			metadata: { error: JSON.stringify(result) }
-		};
-	}
-
-	function parseGenerationResult(result: unknown): GenerationPayload {
-		const payload = firstPayload(result);
-
-		if (payload && typeof payload === 'object') {
-			const candidate = payload as Partial<GenerationPayload>;
-			const content =
-				typeof candidate.content === 'string'
-					? candidate.content
-					: JSON.stringify(candidate.content ?? '');
-
-			return {
-				content,
-				model: candidate.model,
-				source_text: candidate.source_text,
-				usage: candidate.usage
-			};
-		}
-
-		return {
-			content: typeof payload === 'string' ? payload : JSON.stringify(payload ?? '')
-		};
 	}
 
 	function nowLabel(): string {
@@ -131,44 +40,25 @@
 
 	let connecting = $state(false);
 	let generating = $state(false);
-	let app = $state.raw<Client | null>(null);
 	let inputText = $state('');
 	let outputText = $state('');
 	let error = $state<string | null>(null);
-	let health = $state.raw<HealthPayload | null>(null);
 	let history = $state.raw<HistoryEntry[]>([]);
 	let draft = $state.raw<HistoryEntry | null>(null);
 	let activeEntryId = $state<string | null>(null);
 	let requestId = $state(0);
 
 	let modelStatus = $derived.by(() => {
-		if (connecting) {
-			return 'Checking';
-		}
-
-		if (!useAws && !app) {
-			return 'Offline';
-		}
-
-		if (!health) {
-			return 'Unknown';
-		}
-
-		if (health.status === 'success') {
-			return 'Ready';
-		}
-
-		return health.status === 'pending' ? 'Pending' : 'Error';
+		if (connecting) return 'Checking';
+		if (backend.status === 'Ready') return 'Ready';
+		if (backend.status === 'Pending') return 'Pending';
+		if (backend.status === 'Error') return 'Error';
+		if (backend.status === 'Not Checked') return 'Unknown';
+		return 'Unknown';
 	});
 
 	let canGenerate = $derived(
-		Boolean(
-			(useAws || app) &&
-			health?.status === 'success' &&
-			inputText.trim() &&
-			!connecting &&
-			!generating
-		)
+		Boolean(backend.status === 'Ready' && inputText.trim() && !connecting && !generating)
 	);
 
 	let outputStatus = $derived.by(() => {
@@ -194,32 +84,11 @@
 	async function refreshHealth() {
 		connecting = true;
 		error = null;
+		await backend.healthCheck();
+		connecting = false;
 
-		try {
-			if (useAws) {
-				const result = await getWidget(`${widgetUrl}/health`);
-				health = parseHealthResult(result);
-			} else {
-				app = await Client.connect(hfSpace);
-				const result = await app.predict('/health', {});
-				health = parseHealthResult(result);
-			}
-
-			if (health.status === 'error') {
-				error = health.metadata?.error
-					? `${health.message} ${health.metadata.error}`
-					: health.message;
-			}
-		} catch (errorValue) {
-			app = null;
-			health = {
-				status: 'error',
-				message: 'Could not check model gateway.',
-				metadata: { error: getErrorMessage(errorValue) }
-			};
-			error = `Could not check model connection: ${getErrorMessage(errorValue)}`;
-		} finally {
-			connecting = false;
+		if (backend.status === 'Error' && backend.message?.type === 'error') {
+			error = backend.message.content;
 		}
 	}
 
@@ -306,7 +175,7 @@
 			return;
 		}
 
-		if (!(useAws || app) || health?.status !== 'success') {
+		if (backend.status !== 'Ready') {
 			error = 'Model gateway is not ready yet.';
 			return;
 		}
@@ -317,17 +186,22 @@
 		outputText = '';
 
 		try {
-			const result: unknown = useAws
-				? await postWidget(`${widgetUrl}/generate`, { input_text: prompt })
-				: await app!.predict('/generate', { input_text: prompt });
-			const generation = parseGenerationResult(result);
+			const { data, error: parseError } = await backend.post(
+				'/generate',
+				{ input_text: prompt },
+				{ schema: GenerateResponseSchema }
+			);
 
 			if (activeRequestId !== requestId) {
 				return;
 			}
 
-			outputText = generation.content;
-			addHistory(prompt, generation.content);
+			if (parseError || !data) {
+				throw parseError ?? new Error('Failed to parse generation result');
+			}
+
+			outputText = data.content;
+			addHistory(prompt, data.content);
 		} catch (errorValue) {
 			if (activeRequestId !== requestId) {
 				return;
@@ -341,8 +215,8 @@
 		}
 	}
 
-	onMount(async () => {
-		await refreshHealth();
+	onMount(() => {
+		void refreshHealth();
 	});
 </script>
 
@@ -394,7 +268,7 @@
 				{#if draft}
 					<Button
 						variant="secondary"
-						className={historyButtonClass}
+						class={historyButtonClass}
 						onclick={restoreDraft}
 						disabled={generating}
 					>
@@ -412,7 +286,7 @@
 								<Button
 									variant="secondary"
 									pressed={activeEntryId === entry.id}
-									className={historyButtonClass}
+									class={historyButtonClass}
 									onclick={() => loadEntry(entry)}
 									disabled={generating}
 								>
@@ -437,7 +311,7 @@
 			{#each EXAMPLES as example (example)}
 				<Button
 					variant="secondary"
-					className={chipButtonClass}
+					class={chipButtonClass}
 					onclick={() => applyExample(example)}
 					disabled={generating}
 				>

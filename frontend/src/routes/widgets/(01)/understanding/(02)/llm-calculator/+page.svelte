@@ -1,23 +1,18 @@
 <script module>
 	export const title = 'LLM Calculator';
-	export const hfSpace = 'QUT-GenAILab/server-llm-calculator';
 	export const widgetUrl = '/llm-calculator';
 </script>
 
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
 	import Title from '$lib/components/title/title.svelte';
-	import { postWidget } from '$lib/widgets-api';
-	import { Client } from '@gradio/client';
+	import { WidgetBackend } from '$lib/widgets/widget-backend.svelte';
+	import { CalculateResponseSchema } from '$lib/widgets/schemas';
 	import { onMount } from 'svelte';
 
 	type Operation = '+' | '-' | '*' | '/';
 
-	interface GradioPredictionResult {
-		data?: unknown;
-	}
-
-	const useAws = widgetUrl.length > 0;
+	const backend = new WidgetBackend(`${widgetUrl}`);
 
 	const EXAMPLES = [
 		{
@@ -121,45 +116,8 @@
 		}
 	}
 
-	function extractMainResult(result: unknown): string {
-		const payload = result as GradioPredictionResult | string | string[] | undefined;
-
-		if (typeof payload === 'string') {
-			return payload;
-		}
-
-		if (Array.isArray(payload)) {
-			const first = payload[0];
-			return typeof first === 'string' ? first : JSON.stringify(first);
-		}
-
-		if (payload && typeof payload === 'object' && 'data' in payload) {
-			const data = payload.data;
-
-			if (Array.isArray(data)) {
-				const first = data[0];
-
-				if (typeof first === 'string') {
-					return first;
-				}
-
-				if (first && typeof first === 'object' && 'value' in first) {
-					const nested = (first as { value?: unknown }).value;
-					return typeof nested === 'string' ? nested : JSON.stringify(nested);
-				}
-			}
-
-			if (typeof data === 'string') {
-				return data;
-			}
-		}
-
-		return JSON.stringify(result);
-	}
-
-	let loading = $state(false);
 	let computing = $state(false);
-	let app = $state.raw<Client | null>(null);
+	let connecting = $state(false);
 	let leftOperand = $state('');
 	let rightOperand = $state('');
 	let operation = $state<Operation | null>(null);
@@ -174,19 +132,12 @@
 	let requestId = $state(0);
 
 	let modelStatus = $derived.by(() => {
-		if (loading) {
-			return 'Connecting';
-		}
-
-		if (computing) {
-			return 'Calculating';
-		}
-
-		if (useAws) {
-			return 'Ready';
-		}
-
-		return app ? 'Ready' : 'Offline';
+		if (connecting) return 'Checking';
+		if (computing) return 'Calculating';
+		if (backend.status === 'Ready') return 'Ready';
+		if (backend.status === 'Pending') return 'Pending';
+		if (backend.status === 'Error') return 'Error';
+		return 'Unknown';
 	});
 
 	let currentExpression = $derived.by(() => {
@@ -214,25 +165,6 @@
 		'min-h-9 cursor-pointer bevel-raised bg-surface-variant font-[Tahoma,Geneva,Verdana,sans-serif] text-[13px] font-bold text-text hover:bevel-sunken focus-visible:bevel-sunken focus-visible:outline-none disabled:cursor-default disabled:text-muted-text disabled:hover:bevel-raised disabled:focus-visible:bevel-raised';
 	const noticeClass = 'bevel-raised-thin bg-surface-variant px-2.5 py-2 text-xs leading-6';
 	const exampleButtonClass = 'min-h-7.5 px-2.5 py-1.25 text-[11px]';
-
-	async function connectModel() {
-		if (useAws) {
-			loading = false;
-			return;
-		}
-
-		loading = true;
-		error = null;
-
-		try {
-			app = await Client.connect(hfSpace);
-		} catch (errorValue) {
-			app = null;
-			error = `Could not load model: ${getErrorMessage(errorValue)}`;
-		} finally {
-			loading = false;
-		}
-	}
 
 	function clearAll() {
 		requestId += 1;
@@ -311,11 +243,6 @@
 			return;
 		}
 
-		if (!useAws && !app) {
-			error = 'Model not connected yet.';
-			return;
-		}
-
 		if (!operation) {
 			mainDisplay = leftOperand || '0';
 			return;
@@ -343,23 +270,25 @@
 		mainDisplay = 'Calculating...';
 
 		try {
-			const result: unknown = useAws
-				? await postWidget(`${widgetUrl}/calculate`, {
-						left_num: left,
-						operation: activeOperation,
-						right_num: right
-					})
-				: await app!.predict('/calculate', {
-						left_num: left,
-						operation: activeOperation,
-						right_num: right
-					});
+			const { data, error: parseError } = await backend.post(
+				'/calculate',
+				{
+					left_num: left,
+					operation: activeOperation,
+					right_num: right
+				},
+				{ schema: CalculateResponseSchema }
+			);
 
 			if (activeRequestId !== requestId) {
 				return;
 			}
 
-			const llmResult = extractMainResult(result);
+			if (parseError || data === undefined || data === null) {
+				throw parseError ?? new Error('Failed to parse calculation result');
+			}
+
+			const llmResult = data;
 			const correctResult = formatNumber(computeCorrectResult(left, activeOperation, right));
 
 			mainDisplay = llmResult;
@@ -394,7 +323,13 @@
 		leftOperand = example.left;
 		operation = example.operation;
 		rightOperand = example.right;
-		calculate();
+		void calculate();
+	}
+
+	async function reconnectModel() {
+		connecting = true;
+		await backend.healthCheck();
+		connecting = false;
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
@@ -434,8 +369,8 @@
 		}
 	}
 
-	onMount(async () => {
-		await connectModel();
+	onMount(() => {
+		void backend.healthCheck();
 	});
 </script>
 
@@ -469,6 +404,12 @@
 				>
 					{mainDisplay}
 				</div>
+			</div>
+
+			<div class="mt-3 flex flex-wrap gap-2">
+				<Button variant="secondary" onclick={reconnectModel} disabled={connecting}>
+					{connecting ? 'Checking...' : 'Reconnect model'}
+				</Button>
 			</div>
 
 			<div class="mt-3 grid grid-cols-4 gap-1.5">
@@ -538,15 +479,6 @@
 		</div>
 
 		<div class="flex flex-col">
-			<Button
-				variant="secondary"
-				className="w-full mb-4"
-				onclick={() => void connectModel()}
-				disabled={loading || computing}
-			>
-				Reconnect model
-			</Button>
-
 			{#if error}
 				<p class={[noticeClass, 'mb-4 text-[#7f0000]']}>{error}</p>
 			{/if}
@@ -554,7 +486,7 @@
 			<div class="grow bg-surface-variant p-2.5 bevel-raised-thin">
 				<div class={displayLabelClass}>Difference</div>
 				<p class={['mb-2', sectionMetaClass]}>
-					{#if lastEquation && !computing && lastEquation.correct !== mainDisplay}
+					{#if lastEquation && !computing && Number.parseFloat(lastEquation.correct) !== Number.parseFloat(mainDisplay)}
 						{@const diff = Number.parseFloat(lastEquation.correct) - Number.parseFloat(mainDisplay)}
 						{@const isHigher = diff > 0}
 						{@const isLower = diff < 0}
@@ -567,7 +499,7 @@
 							: isLower
 								? 'lower'
 								: 'equal'} than the correct result.
-					{:else if lastEquation && lastEquation.correct === mainDisplay}
+					{:else if lastEquation && Number.parseFloat(lastEquation.correct) === Number.parseFloat(mainDisplay)}
 						The model's answer is correct!
 					{:else}
 						After you calculate an equation, this will show how far off the model's answer is.
@@ -594,7 +526,7 @@
 						{#each EXAMPLES as example (example.label)}
 							<Button
 								variant="secondary"
-								className={exampleButtonClass}
+								class={exampleButtonClass}
 								onclick={() => loadExample(example)}
 							>
 								{example.left}
