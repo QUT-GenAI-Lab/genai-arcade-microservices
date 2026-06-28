@@ -3,17 +3,14 @@
 	import { twMerge } from 'tailwind-merge';
 	import * as Frame from '$lib/components/ui/frame/index.js';
 	import { getDialogContext } from './context.svelte';
-	import Header from './Header.svelte';
 
 	interface Props {
-		title?: string;
-		icon?: string;
 		position?: 'center' | 'trigger';
 		children?: Snippet;
 		class?: string;
 	}
 
-	let { title, icon, position = 'center', children, class: className = '' }: Props = $props();
+	let { position = 'center', children, class: className = '' }: Props = $props();
 	const context = getDialogContext();
 
 	let isTriggerPosition = $derived(position === 'trigger' && context.triggerRect !== null);
@@ -44,8 +41,7 @@
 			style:left={triggerLeft}
 		>
 			<Frame.Root class={twMerge('w-80 max-w-sm overflow-auto', className)}>
-				<Header {title} {icon} />
-				<Frame.Body class="p-3">
+				<Frame.Body>
 					{@render children?.()}
 				</Frame.Body>
 			</Frame.Root>
@@ -66,8 +62,7 @@
 			<Frame.Root
 				class={twMerge('relative z-10 max-h-[90vh] w-full max-w-md overflow-auto', className)}
 			>
-				<Header {title} {icon} />
-				<Frame.Body class="p-3">
+				<Frame.Body>
 					{@render children?.()}
 				</Frame.Body>
 			</Frame.Root>
