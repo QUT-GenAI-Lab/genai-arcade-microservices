@@ -20,6 +20,13 @@
 		'In the future, we will'
 	];
 	const TOP_K = 10;
+	const TEMPERATURE_PRESETS = [
+		{ label: 'None', value: 0, description: 'Always pick top choice' },
+		{ label: 'Low', value: 0.5, description: 'Prefer top choices' },
+		{ label: 'Standard', value: 1, description: 'Use shown probabilities' },
+		{ label: 'High', value: 2, description: 'More likely to pick unlikely choices' },
+		{ label: 'Max', value: 99, description: 'All choices are equal' }
+	];
 
 	const backend = new WidgetBackend(`${widgetUrl}`);
 
@@ -31,16 +38,46 @@
 		return error instanceof Error ? error.message : 'Unknown error';
 	}
 
+	function applyTemperature(probs: number[], temp: number): number[] {
+		const logits = probs.map((p) => Math.log(p) / temp);
+		const weights = logits.map((l) => Math.exp(l));
+		const sum = weights.reduce((acc, w) => acc + w, 0);
+		return weights.map((w) => w / sum);
+	}
+
+	function sampleIndex(weights: number[]): number {
+		const r = Math.random();
+		let cumulative = 0;
+		for (let i = 0; i < weights.length; i++) {
+			cumulative += weights[i];
+			if (r < cumulative) return i;
+		}
+		return weights.length - 1;
+	}
+
+	function pickSuggestion(preds: TokenPrediction[] | null): TokenPrediction | null {
+		if (!preds?.length) return null;
+		if (temperature === 0) return preds[0];
+		const probs = preds.map((p) => p.probability);
+		const adjusted = applyTemperature(probs, temperature);
+		return preds[sampleIndex(adjusted)];
+	}
+
 	let predicting = $state(false);
 	let connecting = $state(false);
 	let inputText = $state('');
 	let predictions = $state<TokenPrediction[] | null>(null);
 	let error = $state<string | null>(null);
 	let predictionRequestId = $state(0);
+	let temperatureIndex = $state(2);
+	let suggestedToken = $state<TokenPrediction | null>(null);
 
 	let topPrediction = $derived(predictions?.[0] ?? null);
+	let temperature = $derived(TEMPERATURE_PRESETS[temperatureIndex].value);
+	let temperatureLabel = $derived(TEMPERATURE_PRESETS[temperatureIndex].label);
+	let temperatureDescription = $derived(TEMPERATURE_PRESETS[temperatureIndex].description);
 	let suggestion = $derived(
-		topPrediction && inputText.trim() ? buildCompletion(inputText, topPrediction.token) : null
+		suggestedToken && inputText.trim() ? buildCompletion(inputText, suggestedToken.token) : null
 	);
 	let modelStatus = $derived.by(() => {
 		if (connecting) return 'Checking';
@@ -62,7 +99,7 @@
 		return `${predictions.length} candidates loaded`;
 	});
 
-	const panelMetaClass = 'text-xs font-bold text-muted-text';
+	const panelMetaClass = 'text-xs text-muted-text';
 	const noticeClass = 'bevel-raised-thin bg-surface px-2.5 py-2 text-xs leading-6';
 	const chipButtonClass = 'min-h-7.5 px-2.5 py-1.25 text-[11px]';
 	const predictionButtonClass =
@@ -108,12 +145,14 @@
 			}
 
 			predictions = nextPredictions;
+			suggestedToken = pickSuggestion(nextPredictions);
 		} catch (errorValue) {
 			if (requestId !== predictionRequestId) {
 				return;
 			}
 
 			predictions = null;
+			suggestedToken = null;
 			error = `Prediction failed: ${getErrorMessage(errorValue)}`;
 		} finally {
 			if (requestId === predictionRequestId) {
@@ -144,6 +183,7 @@
 		if (!value.trim()) {
 			predictionRequestId += 1;
 			predictions = null;
+			suggestedToken = null;
 			predicting = false;
 			return;
 		}
@@ -163,10 +203,20 @@
 		void refreshPredictions(nextValue);
 	}
 
+	function setTemperature(index: number) {
+		temperatureIndex = index;
+		suggestedToken = pickSuggestion(predictions);
+	}
+
+	function retrySuggestion() {
+		suggestedToken = pickSuggestion(predictions);
+	}
+
 	function clearPrompt() {
 		predictionRequestId += 1;
 		inputText = '';
 		predictions = null;
+		suggestedToken = null;
 		error = null;
 		predicting = false;
 	}
@@ -186,7 +236,7 @@
 					<h2 class="m-0 text-base leading-[1.2]">Prompt</h2>
 					<p class={['m-0', panelMetaClass]}>Model: {modelStatus}</p>
 				</div>
-				<p class="mt-1 max-w-[68ch] leading-6">
+				<p class="mt-1 max-w-[68ch] text-xs leading-6 text-muted-text">
 					Type a sentence and see the top 10 most likely next tokens with their probabilities! Click
 					on any prediction to add that token to your text.
 				</p>
@@ -204,7 +254,7 @@
 			<Button
 				onclick={() => {
 					if (suggestion) {
-						applyPrediction(topPrediction?.token ?? '');
+						applyPrediction(suggestedToken?.token ?? '');
 					} else {
 						refreshPredictions(inputText);
 					}
@@ -219,11 +269,48 @@
 					Refresh predictions
 				{/if}
 			</Button>
+			<Button
+				variant="secondary"
+				onclick={retrySuggestion}
+				disabled={predicting || !predictions?.length || temperature === 0}
+			>
+				Retry
+			</Button>
 			<Button variant="secondary" onclick={clearPrompt} disabled={!inputText}>Clear prompt</Button>
 			<Button variant="secondary" onclick={reconnectModel} disabled={connecting}>
 				{connecting ? 'Checking...' : 'Reconnect model'}
 			</Button>
 		</div>
+	</section>
+
+	<section class="grid gap-2.5">
+		<div class="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1.5">
+			<div>
+				<h2 class="m-0 text-base leading-[1.2]">Temperature (Creativity)</h2>
+			</div>
+			<p class={['m-0', panelMetaClass]}>
+				{temperatureLabel}{temperature !== 1 ? ` (${temperature})` : ''}
+			</p>
+		</div>
+
+		<input
+			type="range"
+			min="0"
+			max="4"
+			step="1"
+			value={temperatureIndex}
+			oninput={(e) => setTemperature(Number((e.currentTarget as HTMLInputElement).value))}
+			class="w-full accent-[var(--color-primary)]"
+			aria-label="Temperature"
+		/>
+		<div class="flex justify-between text-[11px] text-muted-text">
+			{#each TEMPERATURE_PRESETS as preset (preset.label)}
+				<span>{preset.label}</span>
+			{/each}
+		</div>
+		{#if temperatureDescription}
+			<p class={['m-0', panelMetaClass]}>{temperatureDescription}</p>
+		{/if}
 	</section>
 
 	<section class="grid gap-2.5">
@@ -269,6 +356,7 @@
 						<Button
 							variant="secondary"
 							class={predictionButtonClass}
+							pressed={prediction.token_id === suggestedToken?.token_id}
 							onclick={() => applyPrediction(prediction.token)}
 						>
 							<span class="min-w-3.5 text-[11px] text-muted-text">{prediction.rank}.</span>
