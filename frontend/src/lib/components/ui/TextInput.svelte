@@ -96,14 +96,13 @@
 
 	<div class="relative">
 		{#if suggestionSuffix}
-			{@const cleanedSuggestion = suggestionSuffix.trimStart()}
+			{@const cleanedSuggestion = suggestionSuffix}
 			<div
 				class="pointer-events-none absolute inset-0 z-20 overflow-hidden px-3.5 py-3 font-[Tahoma,Geneva,Verdana,sans-serif] text-sm leading-[1.6] break-words whitespace-pre-wrap text-transparent"
 				aria-hidden="true"
 			>
 				<div class="min-h-full" style:transform={`translate(${-overlayLeft}px, ${-overlayTop}px)`}>
-					<span>{value}</span>
-					<button
+					<span>{value}</span><button
 						class="pointer-events-auto cursor-pointer text-muted-text"
 						onclick={acceptSuggestion}>{cleanedSuggestion}</button
 					>
