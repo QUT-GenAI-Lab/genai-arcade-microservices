@@ -334,13 +334,6 @@
 		>
 			Clear chat
 		</Button>
-		<Button
-			variant="secondary"
-			onclick={() => void refreshHealth()}
-			disabled={connecting || generating}
-		>
-			{connecting ? 'Checking...' : 'Reconnect model'}
-		</Button>
 	</div>
 
 	<section class="grid gap-2.5">

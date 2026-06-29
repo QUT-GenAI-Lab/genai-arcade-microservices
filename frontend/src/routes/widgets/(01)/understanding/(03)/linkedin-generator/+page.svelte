@@ -249,13 +249,6 @@
 				<Button variant="secondary" onclick={clearCurrent} disabled={!inputText && !outputText}>
 					Clear
 				</Button>
-				<Button
-					variant="secondary"
-					onclick={() => void refreshHealth()}
-					disabled={connecting || generating}
-				>
-					{connecting ? 'Checking...' : 'Reconnect model'}
-				</Button>
 			</div>
 		</section>
 

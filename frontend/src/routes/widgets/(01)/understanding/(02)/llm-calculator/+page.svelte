@@ -406,12 +406,6 @@
 				</div>
 			</div>
 
-			<div class="mt-3 flex flex-wrap gap-2">
-				<Button variant="secondary" onclick={reconnectModel} disabled={connecting}>
-					{connecting ? 'Checking...' : 'Reconnect model'}
-				</Button>
-			</div>
-
 			<div class="mt-3 grid grid-cols-4 gap-1.5">
 				<button class={[keypadButtonClass, 'text-[#7f0000]']} type="button" onclick={clearAll}
 					>C</button

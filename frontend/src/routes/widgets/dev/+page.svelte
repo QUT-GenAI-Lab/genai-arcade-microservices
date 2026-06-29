@@ -381,9 +381,6 @@
 				>
 					Clear chat
 				</Button>
-				<Button variant="secondary" onclick={() => void connectModel()} disabled={loading}>
-					Reconnect model
-				</Button>
 			</div>
 		</div>
 

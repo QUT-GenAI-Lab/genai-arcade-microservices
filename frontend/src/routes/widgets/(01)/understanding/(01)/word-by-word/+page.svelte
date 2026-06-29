@@ -170,12 +170,6 @@
 		await runPrediction(text, requestId);
 	}
 
-	async function reconnectModel() {
-		connecting = true;
-		await backend.healthCheck();
-		connecting = false;
-	}
-
 	function setPrompt(value: string) {
 		inputText = value;
 		error = null;
@@ -277,9 +271,6 @@
 				Retry
 			</Button>
 			<Button variant="secondary" onclick={clearPrompt} disabled={!inputText}>Clear prompt</Button>
-			<Button variant="secondary" onclick={reconnectModel} disabled={connecting}>
-				{connecting ? 'Checking...' : 'Reconnect model'}
-			</Button>
 		</div>
 	</section>
 
