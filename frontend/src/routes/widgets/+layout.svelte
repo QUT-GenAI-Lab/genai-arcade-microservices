@@ -10,7 +10,7 @@
 	import myComputerIcon from '$lib/assets/images/mycomputer.png';
 	import QRCode from 'qrcode';
 	import ShareIcon from '$lib/components/ui/icons/ShareIcon.svelte';
-	import { SparklesIcon } from '@lucide/svelte';
+	import { ExternalLinkIcon, SparklesIcon } from '@lucide/svelte';
 
 	interface Props {
 		children: Snippet;
@@ -82,61 +82,70 @@
 					<SparklesIcon class="size-3" />
 				{/if}
 			</div>
-			<Dialog.Root
-				onOpenChange={(open) => {
-					console.log('Dialog open state changed:', open);
-				}}
-			>
-				<Dialog.Trigger>
-					<Button size="small" variant="secondary">
-						<ShareIcon class="size-3" /> Share
-					</Button>
-				</Dialog.Trigger>
-				<Dialog.Content position="center">
-					<Dialog.Header title="Share this widget" icon={ShareIcon} />
-					<div class="flex flex-col gap-3 p-3">
-						<div class="flex flex-col gap-2">
-							<p class="text-xs text-gray-700">
-								Scan the QR code to use this widget on your mobile device.
-							</p>
-							<div class="mx-auto size-full bg-white bevel-sunken">
-								{#await qrCodeDataUrl}
-									<p class="mt-2">Generating QR code...</p>
-								{:then url}
-									<img src={url} alt="QR Code" class="size-full" />
-								{:catch}
-									<p class="mt-2 text-red-500">Failed to generate QR code.</p>
-								{/await}
+			<div class="flex items-center gap-1">
+				<Button
+					size="small"
+					variant="secondary"
+					onclick={() => window.open(embedUrl, '_blank')}
+					class="mt-1"
+				>
+					<ExternalLinkIcon class="size-3" /> Open
+				</Button><Dialog.Root
+					onOpenChange={(open) => {
+						console.log('Dialog open state changed:', open);
+					}}
+				>
+					<Dialog.Trigger>
+						<Button size="small" variant="secondary">
+							<ShareIcon class="size-3" /> Share
+						</Button>
+					</Dialog.Trigger>
+					<Dialog.Content position="center">
+						<Dialog.Header title="Share this widget" icon={ShareIcon} />
+						<div class="flex flex-col gap-3 p-3">
+							<div class="flex flex-col gap-2">
+								<p class="text-xs text-gray-700">
+									Scan the QR code to use this widget on your mobile device.
+								</p>
+								<div class="mx-auto size-full bg-white bevel-sunken">
+									{#await qrCodeDataUrl}
+										<p class="mt-2">Generating QR code...</p>
+									{:then url}
+										<img src={url} alt="QR Code" class="size-full" />
+									{:catch}
+										<p class="mt-2 text-red-500">Failed to generate QR code.</p>
+									{/await}
+								</div>
+							</div>
+							<div class="flex flex-col gap-2">
+								<p class="text-xs text-gray-700">
+									Copy the link below to share this widget with others.
+								</p>
+								<div class="flex items-center gap-2">
+									<input
+										type="text"
+										value={embedUrl}
+										readonly
+										class="w-full bg-white px-2 py-1 text-xs text-text bevel-sunken"
+									/>
+									<Button
+										size="small"
+										variant="secondary"
+										onclick={() => onCopy(embedUrl)}
+										class="px-2 py-1 whitespace-nowrap"
+									>
+										{#if copied}
+											Copied!
+										{:else}
+											Copy Link
+										{/if}
+									</Button>
+								</div>
 							</div>
 						</div>
-						<div class="flex flex-col gap-2">
-							<p class="text-xs text-gray-700">
-								Copy the link below to share this widget with others.
-							</p>
-							<div class="flex items-center gap-2">
-								<input
-									type="text"
-									value={embedUrl}
-									readonly
-									class="w-full bg-white px-2 py-1 text-xs text-text bevel-sunken"
-								/>
-								<Button
-									size="small"
-									variant="secondary"
-									onclick={() => onCopy(embedUrl)}
-									class="px-2 py-1 whitespace-nowrap"
-								>
-									{#if copied}
-										Copied!
-									{:else}
-										Copy Link
-									{/if}
-								</Button>
-							</div>
-						</div>
-					</div>
-				</Dialog.Content>
-			</Dialog.Root>
+					</Dialog.Content>
+				</Dialog.Root>
+			</div>
 		</div>
 	</Frame.Header>
 {/snippet}
